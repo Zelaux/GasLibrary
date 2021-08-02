@@ -48,7 +48,6 @@ public class Generators {
     );
 
     public static void run() {
-
         ObjectMap<Block, Pixmap> gens = new ObjectMap<>();
         Fi.get("../editor").mkdirs();
         if (false) {
