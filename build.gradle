@@ -30,7 +30,6 @@ plugins{
 version '1.0'
 allprojects {
 
-    apply plugin: 'maven-publish'
     apply plugin: 'groovy'
 
     version = 'release'
@@ -69,6 +68,7 @@ allprojects {
             processorFile.text = text.toString().replace(".java", "").replace("/", ".").replace("\\", ".")
         }
     }
+    apply plugin: 'maven-publish'
     repositories {
         mavenLocal()
         google()
