@@ -4,7 +4,7 @@ buildscript {
         arcHash = '128'
         mindustryVersion = 'v129.1'
         mindustryVersionAnnotations = 'v126.2'
-        aciVersion='v0.0.3'
+        aciVersion='v1'
         arcModule = { String name ->
             //skip to last submodule
             if (name.contains(':')) name = name.split(':').last()

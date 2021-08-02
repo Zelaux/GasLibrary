@@ -226,7 +226,7 @@ public class GasBlock extends Block {
                 };
             } else {
                 current = (entity) -> {
-                    return entity.gasses == null ? Gasses.oxygen : entity.gasses.current();
+                    return entity.gasses == null ? null : entity.gasses.current();
                 };
             }
 

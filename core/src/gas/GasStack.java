@@ -13,7 +13,7 @@ public class GasStack {
     }
 
     protected GasStack() {
-        gas = Gasses.oxygen;
+        gas = null;
     }
 
     public String toString() {
