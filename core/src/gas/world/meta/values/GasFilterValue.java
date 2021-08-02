@@ -1,12 +1,11 @@
 package gas.world.meta.values;
 
+import gas.content.Gasses;
 import gas.type.Gas;
 import gas.ui.GasDisplay;
 import arc.func.Boolf;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
-import mindustry.Vars;
-import mindustry.ctype.ContentType;
 import mindustry.world.meta.StatValue;
 
 public class GasFilterValue implements StatValue {
@@ -23,7 +22,7 @@ public class GasFilterValue implements StatValue {
     public void display(Table table) {
         Seq<Gas> list = new Seq<>();
 
-        for (Gas gas : Vars.content.<Gas>getBy(ContentType.typeid_UNUSED)) {
+        for (Gas gas : Gasses.all()) {
             if (!gas.isHidden() && this.filter.get(gas)) {
                 list.add(gas);
             }

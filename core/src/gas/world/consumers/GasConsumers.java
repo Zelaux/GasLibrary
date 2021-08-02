@@ -4,8 +4,7 @@ import arc.func.Cons;
 import arc.struct.Bits;
 import arc.util.Nullable;
 import arc.util.Structs;
-import mindustry.Vars;
-import mindustry.ctype.ContentType;
+import gas.content.Gasses;
 import mindustry.world.consumers.Consume;
 import mindustry.world.consumers.ConsumeType;
 import mindustry.world.consumers.Consumers;
@@ -21,7 +20,7 @@ public class GasConsumers extends Consumers {
 
     public GasConsumers() {
         super();
-        this.gasFilter = new Bits(Vars.content.getBy(ContentType.typeid_UNUSED).size);
+        this.gasFilter = new Bits(Gasses.all().size);
     }
 
     public void each(Cons<Consume> c) {

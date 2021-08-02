@@ -1,5 +1,6 @@
 package gas.world.modules;
 
+import gas.content.Gasses;
 import gas.type.Gas;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
@@ -29,8 +30,8 @@ public class GasModule extends BlockModule {
     private float currentFlowRate;
 
     public GasModule() {
-        this.gases = new float[Vars.content.getBy(ContentType.typeid_UNUSED).size];
-        this.current = Vars.content.getByID(ContentType.typeid_UNUSED,0);
+        this.gases = new float[Vars.content.getBy(Gasses.gasType()).size];
+        this.current = Gasses.getByID(0);
     }
 
     public void update(boolean showFlow) {
@@ -118,7 +119,7 @@ public class GasModule extends BlockModule {
     public void each(GasConsumer cons) {
         for (int i = 0; i < this.gases.length; ++i) {
             if (this.gases[i] > 0.0F) {
-                cons.accept(Vars.content.getByID(ContentType.typeid_UNUSED,i), this.gases[i]);
+                cons.accept(Gasses.getByID(i), this.gases[i]);
             }
         }
 
@@ -129,7 +130,7 @@ public class GasModule extends BlockModule {
 
         for (int i = 0; i < this.gases.length; ++i) {
             if (this.gases[i] > 0.0F) {
-                sum += calc.get(Vars.content.getByID(ContentType.typeid_UNUSED,i), this.gases[i]);
+                sum += calc.get(Gasses.getByID(i), this.gases[i]);
             }
         }
 
@@ -169,7 +170,7 @@ public class GasModule extends BlockModule {
             float amount = read.f();
             this.gases[gasid] = amount;
             if (amount > 0.0F) {
-                this.current = Vars.content.getByID(ContentType.typeid_UNUSED,gasid);
+                this.current = Gasses.getByID(gasid);
             }
 
             this.total += amount;

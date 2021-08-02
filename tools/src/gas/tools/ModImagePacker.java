@@ -11,7 +11,7 @@ import arc.math.geom.Vec2;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.*;
-import gas.core.ModContentLoader;
+import gas.core.GasContentLoader;
 import gas.gen.GasContentRegions;
 import gas.gen.GasEntityMapping;
 import mindustry.Vars;
@@ -30,7 +30,7 @@ public class ModImagePacker extends ImagePacker {
         GasVars.packSprites = true;
         ArcNativesLoader.load();
         Log.logger = new Log.NoopLogHandler();
-        Vars.content = new ModContentLoader();
+        Vars.content = new GasContentLoader();
         GasEntityMapping.init();
         Vars.content.createBaseContent();
         Vars.content.createModContent();

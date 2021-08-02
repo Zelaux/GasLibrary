@@ -1,5 +1,6 @@
 package gas.world.consumers;
 
+import gas.content.Gasses;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
 import gas.world.meta.values.GasFilterValue;
@@ -7,8 +8,6 @@ import arc.func.Boolf;
 import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import arc.struct.Seq;
-import mindustry.Vars;
-import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
 //import mindustry.ui.Cicon;
 import mindustry.ui.MultiReqImage;
@@ -24,17 +23,17 @@ public class ConsumeGasFilter extends ConsumeGasBase {
         this.filter = gas;
     }
 
-    public void applyLiquidFilter(Bits arr) {
-        Vars.content.getBy(ContentType.typeid_UNUSED).<Gas>each((gas)->{
-            return filter.get((Gas) gas);
+    public void applyGasFilter(Bits arr) {
+        Gasses.all().each((gas)->{
+            return filter.get(gas);
         }, (gas) -> {
-            arr.set(((Gas)gas).id);
+            arr.set((gas).id);
         });
     }
 
     public void build(Building t, Table table) {
         GasBuilding tile=(GasBuilding)t;
-        Seq<Gas> list = Vars.content.<Gas>getBy(ContentType.typeid_UNUSED).select((g) -> {
+        Seq<Gas> list = Gasses.all().select((g) -> {
             return !g.isHidden() && this.filter.get(g);
         });
         MultiReqImage image = new MultiReqImage();

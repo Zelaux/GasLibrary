@@ -1,6 +1,9 @@
 package gas.type;
 
 import arc.graphics.Color;
+import arc.struct.Seq;
+import gas.content.Gasses;
+import gas.core.GasContentLoader;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.type.StatusEffect;
@@ -17,9 +20,21 @@ public class Gas  extends UnlockableContent {
     public Color lightColor=color=Color.black;
     public float viscosity=0.1f;
     public float transparency=1f;
+    private final Seq<Gas> sameNaming=new Seq<>();
+    private final String realName;
+    public Seq<Gas> sameNaming() {
+        return sameNaming.copy();
+    }
 
     public Gas(String name) {
         super(name);
+        realName=name;
+        for (Gas other : Gasses.all()) {
+            if (other.realName.equals(realName)){
+                other.sameNaming.add(this);
+                sameNaming.add(other);
+            }
+        }
     }
 
     @Override
@@ -34,7 +49,7 @@ public class Gas  extends UnlockableContent {
 
     @Override
     public ContentType getContentType() {
-        return ContentType.typeid_UNUSED;
+        return Gasses.gasType();
     }
     public void setStats() {
         this.stats.addPercent(Stat.explosiveness, this.explosiveness);

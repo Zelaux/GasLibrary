@@ -11,7 +11,6 @@ import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Nullable;
-import gas.content.ModBullets;
 import mindustry.content.*;
 import mindustry.core.ContentLoader;
 import mindustry.ctype.Content;
@@ -29,7 +28,7 @@ import static arc.Core.files;
 import static mindustry.Vars.constants;
 import static mindustry.Vars.mods;
 
-public class ModContentLoader extends ContentLoader {
+public class GasContentLoader extends ContentLoader {
     private ObjectMap<String, MappableContent>[] contentNameMap = new ObjectMap[ContentType.all.length];
     private Seq<Content>[] contentMap = new Seq[ContentType.all.length];
     private MappableContent[][] temporaryMapper;
@@ -55,8 +54,8 @@ public class ModContentLoader extends ContentLoader {
 //            new ModItems(),
 //            new ModStatusEffects(),
 //            new ModLiquids(),
-            new Gasses(),
-            new ModBullets(),
+//            new Gasses(),
+//            new ModBullets(),
 //            new ModUnitTypes(),
             new GasBlocks(),
 //            new ModBlocks(),
@@ -65,10 +64,10 @@ public class ModContentLoader extends ContentLoader {
 //            new ModTechTree(),
     };
 
-    public ModContentLoader(){
+    public GasContentLoader(){
         clear();
     }
-    public ModContentLoader(Cons<ContentList> cons){
+    public GasContentLoader(Cons<ContentList> cons){
         createModContent(cons);
     }
 

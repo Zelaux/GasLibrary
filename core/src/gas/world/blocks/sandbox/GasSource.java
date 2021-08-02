@@ -1,6 +1,7 @@
-package gas.world.blocks.gas;
+package gas.world.blocks.sandbox;
 
 
+import gas.content.Gasses;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
 import gas.world.GasBlock;
@@ -11,7 +12,6 @@ import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
-import mindustry.ctype.ContentType;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.blocks.ItemSelection;
@@ -71,7 +71,7 @@ public class GasSource extends GasBlock {
         }
 
         public void buildConfiguration(Table table) {
-            ItemSelection.buildTable(table, Vars.content.getBy(ContentType.typeid_UNUSED), () -> {
+            ItemSelection.buildTable(table, Vars.content.getBy(Gasses.gasType()), () -> {
                 return this.source;
             }, this::configure);
         }
@@ -102,7 +102,7 @@ public class GasSource extends GasBlock {
         public void read(Reads read, byte revision) {
             super.read(read, revision);
             int id = revision == 1 ? read.s() : read.b();
-            this.source = id == -1 ? null : Vars.content.getByID(ContentType.typeid_UNUSED,id);
+            this.source = id == -1 ? null : Gasses.getByID(id);
         }
 
     }

@@ -5,12 +5,10 @@ import arc.Core;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
 import arc.util.Log;
-import gas.annotations.GasAnnotations;
-import gas.core.ModContentLoader;
+import gas.core.GasContentLoader;
 import gas.gen.*;
 import mindustry.Vars;
 import mindustry.ctype.Content;
-import mindustry.ctype.MappableContent;
 import mindustry.ctype.UnlockableContent;
 import mindustry.mod.Mod;
 
@@ -59,7 +57,7 @@ public class GasLibMod extends Mod {
         Log.info("Gaslib loaded");
         modInfo = Vars.mods.getMod(this.getClass());
 
-        new ModContentLoader((load) -> {
+        new GasContentLoader((load) -> {
             try {
                 load.load();
             } catch (NullPointerException e) {

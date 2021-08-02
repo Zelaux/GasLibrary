@@ -1,5 +1,6 @@
 package gas.world.blocks.power;
 
+import gas.content.Gasses;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
 import gas.world.consumers.ConsumeGasFilter;
@@ -10,10 +11,8 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.util.Time;
-import gas.world.blocks.BuildingLabel;
 import mindustry.Vars;
 import mindustry.content.Fx;
-import mindustry.ctype.ContentType;
 import mindustry.entities.Effect;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -118,7 +117,7 @@ public class AllGenerator extends GasPowerGenerator {
         return 0.0F;
     }
 
-    public class AllGeneratorBuild extends GasPowerGenerator.GasGeneratorBuild implements BuildingLabel {
+    public class AllGeneratorBuild extends GasPowerGenerator.GasGeneratorBuild {
         public float explosiveness;
         public float heat;
         public float totalTime;
@@ -144,7 +143,6 @@ public class AllGenerator extends GasPowerGenerator {
         }
 
         public void updateTile() {
-            runUpdateTaskQueue();
             float calculationDelta = this.delta();
             this.heat = Mathf.lerpDelta(this.heat, this.generateTime >= 0.001F ? 1.0F : 0.0F, 0.05F);
             if (!this.consValid()) {
@@ -161,7 +159,7 @@ public class AllGenerator extends GasPowerGenerator {
                     }
                 }
 
-                for (Gas other : Vars.content.<Gas>getBy(ContentType.typeid_UNUSED)) {
+                for (Gas other : Gasses.all()) {
                     if (hasGas && this.gasses.get(other) >= 0.001F && getGasEfficiency(other) >= minGasEfficiency) {
                         gas = other;
                         break;
