@@ -1,6 +1,9 @@
 package gas.annotations;
 
+import arc.files.Fi;
 import arc.struct.Seq;
+import arc.util.Log;
+import arc.util.OS;
 import arc.util.Strings;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -9,9 +12,11 @@ import com.squareup.javapoet.TypeSpec;
 import mindustry.annotations.BaseProcessor;
 import mindustry.annotations.util.Selement;
 
+import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -19,12 +24,37 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Set;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public abstract class GasBaseProcessor extends BaseProcessor {
     static final String parentName = "mindustry.gen";
     public static String packageName = "gas.gen";
 
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if(round++ >= rounds) return false; //only process 1 round
+        if(rootDirectory == null){
+            try{
+                String path = Fi.get(filer.getResource(StandardLocation.CLASS_OUTPUT, "no", "no")
+                        .toUri().toURL().toString().substring(OS.isWindows ? 6 : "file:".length()))
+                        .parent().parent().parent().parent().parent().parent().parent().toString().replace("%20", " ");
+                rootDirectory = Fi.get(path);
+                if (rootDirectory.name().equals("core"))rootDirectory=rootDirectory.parent();
+            }catch(IOException e){
+                throw new RuntimeException(e);
+            }
+        }
+
+        this.env = roundEnv;
+        try{
+            process(roundEnv);
+        }catch(Throwable e){
+            Log.err(e);
+            throw new RuntimeException(e);
+        }
+        return true;
+    }
     public static void print(String obj, Object... args) {
         String message = Strings.format(obj.toString(), args);
         System.out.println(message);

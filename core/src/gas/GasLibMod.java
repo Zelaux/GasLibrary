@@ -5,21 +5,24 @@ import arc.Core;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
 import arc.util.Log;
+import gas.annotations.GasAnnotations;
 import gas.core.GasContentLoader;
 import gas.gen.*;
 import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.ctype.UnlockableContent;
 import mindustry.mod.Mod;
+import mindustry.mod.Mods;
 
 import static ModVars.modFunc.*;
 import static ModVars.GasVars.*;
 import static mindustry.Vars.*;
-
+@GasAnnotations.CashAnnotation2
 public class GasLibMod extends Mod {
 
 
     public GasLibMod() {
+        if (!GasDependencies.valid())return;
         Log.info("Gaslib created");
         GasEntityMapping.init();
         modInfo = Vars.mods.getMod(getClass());
@@ -43,6 +46,7 @@ public class GasLibMod extends Mod {
     }
 
     public void init() {
+        if (!GasDependencies.valid())return;
         if (!loaded) return;
         Seq<Content> all = Seq.with(content.getContentMap()).<Content>flatten().select(c -> c.minfo.mod == modInfo).as();
         for (Content c : all) {
@@ -53,8 +57,16 @@ public class GasLibMod extends Mod {
     }
 
     public void loadContent() {
-        Log.info("Gaslib loaded");
         modInfo = Vars.mods.getMod(this.getClass());
+        if (!GasDependencies.valid()) {
+            if (modInfo!=null){
+                modInfo.missingDependencies.addAll(modInfo.dependencies.select(mod->!mod.enabled()).map(l->l.name));
+            }
+            return;
+        }
+        if (modInfo.dependencies.count(l->l.enabled())!=modInfo.dependencies.size) {
+            return;
+        }
 
         new GasContentLoader((load) -> {
             try {
@@ -64,5 +76,6 @@ public class GasLibMod extends Mod {
             }
         });
         loaded = true;
+        Log.info("Gaslib loaded");
     }
 }

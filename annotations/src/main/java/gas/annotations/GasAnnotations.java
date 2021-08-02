@@ -237,4 +237,6 @@ public class GasAnnotations {
     @Retention(RetentionPolicy.SOURCE)
     public @interface EntitySuperInterface {
     }
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface CashAnnotation2{}
 }

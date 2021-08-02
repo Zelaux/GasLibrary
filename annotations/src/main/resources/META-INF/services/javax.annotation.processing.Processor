@@ -1,3 +1,4 @@
+gas.annotations.dependencies.DependenciesProc
 gas.annotations.GasTypeIO.ObjectReadProcessor
 gas.annotations.misc.GasLoadRegionProcessor
 gas.annotations.ModEntities.GasEntitiesProc
