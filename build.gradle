@@ -35,7 +35,7 @@ allprojects {
 
     apply plugin: 'groovy'
 
-    version = 'release'
+//    version = 'release'
     group = 'com.github.Zelaux'
 
     ext {
@@ -221,7 +221,6 @@ project(":tools") {
     apply plugin: "java"
 
     dependencies {
-        implementation fileTree(dir: 'libs', include: ['*.jar'])
         implementation 'commons-io:commons-io:2.5'
 
         implementation project(":core")
@@ -281,8 +280,7 @@ jar {
     dependsOn "core:jar"
     archiveFileName = "${project.archivesBaseName}Desktop.jar"
     from {
-//        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-        project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
+          project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     from(rootDir) {
