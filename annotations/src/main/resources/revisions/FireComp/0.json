@@ -1,0 +1,1 @@
+{fields:[{name:lifetime,type:float},{name:tile,type:mindustry.world.Tile},{name:time,type:float},{name:x,type:float},{name:y,type:float}]}

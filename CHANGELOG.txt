@@ -1,0 +1,6 @@
+-fixed oh no gas router
+-fixed planet list without Braindustry planets
+-change cheat menu button style
+-cheat menu is now arranged depending on the availability of mods: time-control, test-utils
+-hotkey mod is now in game hotkeys
+-changed cheat menu style

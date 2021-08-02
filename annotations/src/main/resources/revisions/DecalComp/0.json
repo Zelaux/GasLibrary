@@ -1,0 +1,1 @@
+{fields:[{name:color,type:arc.graphics.Color},{name:lifetime,type:float},{name:region,type:arc.graphics.g2d.TextureRegion},{name:rotation,type:float},{name:time,type:float},{name:x,type:float},{name:y,type:float}]}

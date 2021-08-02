@@ -1,0 +1,9 @@
+name: "gas-library-java"
+displayName: "GasLibrary"
+author: "Zelaux"
+description: "Java library for java mods"
+main: "gas.GasLibMod"
+version: 0.0.1
+dependencies: ["advanced-content-info"]
+minGameVersion: 129.1
+
