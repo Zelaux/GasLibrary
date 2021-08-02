@@ -412,9 +412,10 @@ public class GasEntitiesProc extends GasBaseProcessor {
                     .addModifiers(Modifier.PUBLIC)
                     .addStatement("return $S + $L", name + "#", "id").build());
 
-            ModEntityIO io = new ModEntityIO(type.name(), builder, allFieldSpecs, serializer, rootDirectory.child("annotations/src/main/resources/revisions").child(type.name()));
+            ModEntityIO io = new ModEntityIO(type.name(), builder, allFieldSpecs, serializer, rootDirectory.parent().child("annotations/src/main/resources/revisions").child(type.name()));
             //entities with no sync comp and no serialization gen no code
             boolean hasIO = ann.genio() && (components.contains(s -> s.name().contains("Sync")) || ann.serialize());
+
 
             //add all methods from components
             for (ObjectMap.Entry<String, Seq<Smethod>> entry : methods) {
@@ -600,7 +601,7 @@ public class GasEntitiesProc extends GasBaseProcessor {
         if (true) {
             //load map of sync IDs
             StringMap map = new StringMap();
-            Fi idProps = rootDirectory.child("annotations/src/main/resources/classids.properties");
+            Fi idProps = rootDirectory.parent().child("annotations/src/main/resources/classids.properties");
             if (!idProps.exists()) idProps.writeString("");
             PropertiesUtils.load(map, idProps.reader());
             //next ID to be used in generation

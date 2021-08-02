@@ -46,7 +46,6 @@ allprojects {
             def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/javax.annotation.processing.Processor")
             def text = new StringBuilder()
             def files = new File(rootDir, "annotations/src/main/java")
-            System.out.println("groovy.io.FileType.FILES: "+groovy.io.FileType)
             files.eachFileRecurse(groovy.io.FileType.FILES){ file ->
                 if(file.name.endsWith(".java") && (file.text.contains(" extends GasBaseProcessor") || (file.text.contains(" extends AbstractProcessor") && !file.text.contains("abstract class")))){
                     text.append(file.path.substring(files.path.length() + 1)).append("\n")
