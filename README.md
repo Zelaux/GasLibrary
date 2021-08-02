@@ -127,15 +127,15 @@ Download
 Depend via Maven:
 ```xml
 <dependency>
-	    <groupId>com.github.Zelaux</groupId>
-	    <artifactId>GasLirary</artifactId>
-	    <version>v1</version>
+	    <groupId>com.github.Zelaux.GasLirary</groupId>
+	    <artifactId>core</artifactId>
+	    <version>v1.1</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
 dependencies {
-        implementation 'com.github.Zelaux:GasLirary:v1'
+        implementation 'com.github.Zelaux.GasLirary:v1.1'
 }
 ```
 
