@@ -1,9 +1,12 @@
+import arc.util.OS
+
 buildscript {
     ext {
         arcHash = "128"
         mindustryVersion = "v129.1"
         mindustryVersionAnnotations = "v126.2"
-        aciVersion="v1"
+        aciVersion = "v1"
+        modsDirectory = "classic"
     }
     repositories {
         mavenLocal()
@@ -22,7 +25,7 @@ buildscript {
     }
 }
 
-plugins{
+plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.32'
     id "org.jetbrains.kotlin.kapt" version "1.4.32"
     id 'groovy'
@@ -35,7 +38,7 @@ allprojects {
     version = 'release'
     group = 'com.github.Zelaux'
 
-    ext{
+    ext {
         arcModule = { String name ->
             //skip to last submodule
             if (name.contains(':')) name = name.split(':').last()
@@ -46,8 +49,8 @@ allprojects {
             def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/javax.annotation.processing.Processor")
             def text = new StringBuilder()
             def files = new File(rootDir, "annotations/src/main/java")
-            files.eachFileRecurse(groovy.io.FileType.FILES){ file ->
-                if(file.name.endsWith(".java") && (file.text.contains(" extends GasBaseProcessor") || (file.text.contains(" extends AbstractProcessor") && !file.text.contains("abstract class")))){
+            files.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+                if (file.name.endsWith(".java") && (file.text.contains(" extends GasBaseProcessor") || (file.text.contains(" extends AbstractProcessor") && !file.text.contains("abstract class")))) {
                     text.append(file.path.substring(files.path.length() + 1)).append("\n")
                 }
             }
@@ -59,8 +62,8 @@ allprojects {
             def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/com.sun.source.util.Plugin")
             def text = new StringBuilder()
             def files = new File(rootDir, "annotations/src/main/java")
-            files.eachFileRecurse(groovy.io.FileType.FILES){ file ->
-                if(file.name.endsWith(".java") && (file.text.contains(" implements Plugin"))){
+            files.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+                if (file.name.endsWith(".java") && (file.text.contains(" implements Plugin"))) {
                     text.append(file.path.substring(files.path.length() + 1)).append("\n")
                 }
             }
@@ -78,14 +81,14 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
 
-    task clearCache{
-        doFirst{
-            delete{
+    task clearCache {
+        doFirst {
+            delete {
                 delete "$rootDir/core/assets/cache"
             }
         }
     }
-    tasks.withType(JavaCompile){
+    tasks.withType(JavaCompile) {
         targetCompatibility = 8
         sourceCompatibility = JavaVersion.VERSION_16
         options.encoding = "UTF-8"
@@ -109,8 +112,8 @@ ext {
         proc.waitForProcessOutput(System.out, System.err)
     }
 }
-configure(project(":annotations")){
-    tasks.withType(JavaCompile){
+configure(project(":annotations")) {
+    tasks.withType(JavaCompile) {
         targetCompatibility = 8
         sourceCompatibility = 8
         options.fork = true
@@ -118,13 +121,13 @@ configure(project(":annotations")){
 }
 
 //compile with java 8 compatibility for everything except the annotation project
-configure(subprojects - project(":annotations")){
-    tasks.withType(JavaCompile){
+configure(subprojects - project(":annotations")) {
+    tasks.withType(JavaCompile) {
         options.compilerArgs.addAll(['--release', '8'])
     }
 
-    tasks.withType(Javadoc){
-        options{
+    tasks.withType(Javadoc) {
+        options {
             addStringOption('Xdoclint:none', '-quiet')
             addStringOption('-release', '16')
         }
@@ -136,8 +139,8 @@ project(":core") {
     apply plugin: "kotlin"
     apply plugin: "kotlin-kapt"
 
-    kapt{
-        javacOptions{
+    kapt {
+        javacOptions {
             option("-source", "16")
             option("-target", "1.8")
         }
@@ -150,18 +153,18 @@ project(":core") {
     }
     task copyChangelog {
     }
-    task sourcesJar(type: Jar, dependsOn: classes){
+    task sourcesJar(type: Jar, dependsOn: classes) {
         archiveClassifier = 'sources'
         from sourceSets.main.allSource
     }
 
-    task assetsJar(type: Jar, dependsOn: ":tools:pack"){
+    task assetsJar(type: Jar, dependsOn: ":tools:pack") {
         archiveClassifier = 'assets'
-        from files("assets"){
+        from files("assets") {
             exclude "config", "cache", "music", "sounds"
         }
     }
-    artifacts{
+    artifacts {
         archives sourcesJar
         archives assetsJar
     }
@@ -187,21 +190,21 @@ project(":core") {
 //        annotationProcessor project(":annotations")
 
     }
-    afterEvaluate{
-        task mergedJavadoc(type: Javadoc){
+    afterEvaluate {
+        task mergedJavadoc(type: Javadoc) {
             def blacklist = [/*project(":ios"), project(":desktop"), project(":server"),*/ project(":annotations")]
-            if(findProject(":android") != null){
+            if (findProject(":android") != null) {
                 blacklist += project(":android")
             }
 
-            source rootProject.subprojects.collect{ project ->
-                if(!blacklist.contains(project) && project.hasProperty("sourceSets")){
+            source rootProject.subprojects.collect { project ->
+                if (!blacklist.contains(project) && project.hasProperty("sourceSets")) {
                     return project.sourceSets.main.allJava
                 }
             }
 
             classpath = files(rootProject.subprojects.collect { project ->
-                if(!blacklist.contains(project) && project.hasProperty("sourceSets")){
+                if (!blacklist.contains(project) && project.hasProperty("sourceSets")) {
                     return project.sourceSets.main.compileClasspath
                 }
             })
@@ -248,15 +251,15 @@ project(":annotations") {
     }
 }
 
-configure([":core", ":tools"].collect{project(it)}){
-    java{
+configure([":core", ":tools"].collect { project(it) }) {
+    java {
         withJavadocJar()
         withSourcesJar()
     }
 
-    publishing{
-        publications{
-            maven(MavenPublication){
+    publishing {
+        publications {
+            maven(MavenPublication) {
                 from components.java
             }
         }
@@ -305,11 +308,33 @@ task deploy(type: Jar) {
         delete { delete "$buildDir/libs/${project.archivesBaseName}Android.jar" }
     }
 }
-task resolveDependencies{
-    doLast{
-        rootProject.allprojects{ project ->
+task resolveDependencies {
+    doLast {
+        rootProject.allprojects { project ->
             Set<Configuration> configurations = project.buildscript.configurations + project.configurations
-            configurations.findAll{c -> c.canBeResolved}.forEach{c -> c.resolve()}
+            configurations.findAll { c -> c.canBeResolved }.forEach { c -> c.resolve() }
+        }
+    }
+}
+task mjar() {
+    dependsOn "jar"
+    doFirst {
+    }
+    doLast {
+        def intoPath = null
+        if ("classic".equals(modsDirectory)) {
+            intoPath = "${OS.getAppDataDirectoryString("Mindustry")}/mods/"
+        } else if (modsDirectory!=null)intoPath=modsDirectory;
+        if (intoPath != null) {
+            delete{
+                delete "${intoPath}/${project.archivesBaseName}Desktop.jar"
+            }
+            copy {
+                from "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
+                into intoPath
+            }
+            def time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+            System.out.println("\tlast build time: ${time}")
         }
     }
 }

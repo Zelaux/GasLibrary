@@ -38,6 +38,7 @@ public class modFunc {
     public static void checkTranslate(UnlockableContent content) {
         content.localizedName = Core.bundle.get(content.getContentType() + "." + content.name + ".name", content.localizedName);
         content.description = Core.bundle.get(content.getContentType() + "." + content.name + ".description", content.description);
+        content.details = Core.bundle.get(content.getContentType() + "." + content.name + ".details", content.details);
     }
 
     public static String fullName(String name) {

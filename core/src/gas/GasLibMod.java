@@ -43,7 +43,6 @@ public class GasLibMod extends Mod {
     }
 
     public void init() {
-        Log.info("Gaslib inited");
         if (!loaded) return;
         Seq<Content> all = Seq.with(content.getContentMap()).<Content>flatten().select(c -> c.minfo.mod == modInfo).as();
         for (Content c : all) {
