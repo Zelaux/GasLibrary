@@ -8,7 +8,7 @@ import gas.type.Gas;
 import mindustry.io.TypeIO;
 
 @GasAnnotations.TypeIOHandler
-public class ModTypeIO extends TypeIO {
+public class GasTypeIO extends TypeIO {
     public static void writeGas(Writes writes, Gas gas) {
         writes.i(gas.id);
     }
