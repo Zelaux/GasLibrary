@@ -1,5 +1,3 @@
-import arc.util.OS
-
 buildscript {
     ext {
         arcHash = "128"
@@ -321,7 +319,7 @@ task mjar() {
     doLast {
         def intoPath = null
         if ("classic".equals(modsDirectory)) {
-            intoPath = "${OS.getAppDataDirectoryString("Mindustry")}/mods/"
+            intoPath = "${arc.util.OS.getAppDataDirectoryString("Mindustry")}/mods/"
         } else if (modsDirectory!=null)intoPath=modsDirectory;
         if (intoPath != null) {
             delete{
