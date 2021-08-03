@@ -1,5 +1,6 @@
 package gas.world.blocks.sandbox;
 
+import gas.annotations.GasAnnotations;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
 import gas.world.GasBlock;
@@ -8,6 +9,7 @@ import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.meta.BlockGroup;
 
+@GasAnnotations.GasAddition()
 public class GasVoid extends GasBlock {
     public GasVoid(String name) {
         super(name);

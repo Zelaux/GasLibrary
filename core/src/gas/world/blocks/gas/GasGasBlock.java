@@ -8,6 +8,7 @@ import arc.graphics.g2d.TextureRegion;
 import mindustry.graphics.Drawf;
 import mindustry.world.meta.BlockGroup;
 
+@GasAnnotations.GasAddition()
 public class GasGasBlock extends GasBlock {
 
     public @GasAnnotations.Load("@-gas") TextureRegion gasRegion;

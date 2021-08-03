@@ -9,16 +9,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 public class GasAnnotations {
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface GasAddition {
+        String analogue() default "\n";
+        String description() default "\n";
+    }
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Replace{
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface CustomStatCat{
-    }
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface CustomStat{
     }
 
     /** Indicates that a method should be final in all implementing classes. */
@@ -149,36 +147,6 @@ public class GasAnnotations {
     @Retention(RetentionPolicy.SOURCE)
     public @interface TypeIOHandler{
     }
-    @Target({ElementType.TYPE})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface WritableObject{
-
-    }
-    @Target({ElementType.METHOD})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface EntityConfig {
-        Class[] value() default {};
-    }
-    @Target({ElementType.METHOD})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface WritableObjectsConfig {
-        Class[] value() default {};
-        int offset() default 0;
-    }
-    public enum Values {
-        val;
-        Object value;
-
-        public Values setValue(Object value) {
-            this.value = value;
-            return this;
-        }
-
-        public String getToStringValue() {
-            return value + "";
-        }
-    }
-
     @Retention(RetentionPolicy.SOURCE)
     public @interface DefaultValue {
         String value();

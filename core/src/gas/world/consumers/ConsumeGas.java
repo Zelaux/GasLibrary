@@ -1,6 +1,7 @@
 package gas.world.consumers;
 
 import acontent.world.meta.AStats;
+import gas.annotations.GasAnnotations;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
 import arc.scene.ui.layout.Table;
@@ -12,8 +13,8 @@ import mindustry.ui.ReqImage;
 import mindustry.world.consumers.ConsumeType;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
-
-public class ConsumeGasses extends GasConsume {
+@GasAnnotations.GasAddition(analogue = "mindustry.world.consumers.ConsumeLiquid")
+public class ConsumeGas extends GasConsume {
     public final Gas gas;
     public final float amount;
 
@@ -24,12 +25,12 @@ public class ConsumeGasses extends GasConsume {
     protected float use(Building entity) {
         return Math.min(this.amount * entity.edelta(), entity.block.liquidCapacity);
     }
-    public ConsumeGasses(Gas gas, float amount) {
+    public ConsumeGas(Gas gas, float amount) {
         this.amount = amount;
         this.gas = gas;
     }
 
-    protected ConsumeGasses() {
+    protected ConsumeGas() {
         this((Gas) null, 0.0F);
     }
 

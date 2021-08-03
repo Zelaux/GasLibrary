@@ -1,6 +1,7 @@
 package gas.world.blocks.sandbox;
 
 
+import gas.annotations.GasAnnotations;
 import gas.content.Gasses;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
@@ -17,6 +18,7 @@ import mindustry.gen.Building;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
 
+@GasAnnotations.GasAddition()
 public class GasSource extends GasBlock {
     public GasSource(String name) {
         super(name);

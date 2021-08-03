@@ -1,9 +1,11 @@
 package gas.world.blocks.distribution;
 
+import gas.annotations.GasAnnotations;
 import gas.type.Gas;
 import gas.world.blocks.gas.GasGasBlock;
 import mindustry.gen.Building;
 
+@GasAnnotations.GasAddition()
 public class GasRouter extends GasGasBlock {
     public GasRouter(String name){
         super(name);

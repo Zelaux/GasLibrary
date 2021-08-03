@@ -26,6 +26,7 @@ import mindustry.world.consumers.ConsumeLiquidFilter;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 
+@GasAnnotations.GasAddition(analogue = "mindustry.world.blocks.power.ItemLiquidGenerator")
 public class AllGenerator extends GasPowerGenerator {
     public float minItemEfficiency;
     public float itemDuration;

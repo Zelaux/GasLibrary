@@ -1,8 +1,8 @@
 package gas;
 
-import gas.content.Gasses;
+import gas.annotations.GasAnnotations;
 import gas.type.Gas;
-
+@GasAnnotations.GasAddition(description = "like ItemStack but for Gas")
 public class GasStack {
     public Gas gas;
     public float amount;

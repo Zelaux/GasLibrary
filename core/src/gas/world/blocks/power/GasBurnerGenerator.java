@@ -7,18 +7,18 @@ import arc.graphics.g2d.TextureRegion;
 import mindustry.graphics.Drawf;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
-
-public class AllBurnerGenerator extends AllGenerator {
+@GasAnnotations.GasAddition(analogue = "auto")
+public class GasBurnerGenerator extends AllGenerator {
     public @GasAnnotations.Load(value = "@-turbine#", length = 2) TextureRegion[] turbineRegions;
     public @GasAnnotations.Load("@-cap") TextureRegion capRegion;
     public float turbineSpeed = 2.0F;
 
 
-    public AllBurnerGenerator(boolean hasItems, boolean hasLiquids, boolean hasGas, String name) {
+    public GasBurnerGenerator(boolean hasItems, boolean hasLiquids, boolean hasGas, String name) {
         super(hasItems, hasLiquids, hasGas, name);
     }
 
-    public AllBurnerGenerator(String name) {
+    public GasBurnerGenerator(String name) {
         super(name);
     }
 
@@ -42,15 +42,15 @@ public class AllBurnerGenerator extends AllGenerator {
     public class AllBurnerGeneratorBuild extends AllGenerator.AllGeneratorBuild {
         public void draw() {
             super.draw();
-            if (AllBurnerGenerator.this.turbineRegions[0].found()) {
-                Draw.rect(AllBurnerGenerator.this.turbineRegions[0], this.x, this.y, this.totalTime * AllBurnerGenerator.this.turbineSpeed);
-                Draw.rect(AllBurnerGenerator.this.turbineRegions[1], this.x, this.y, -this.totalTime * AllBurnerGenerator.this.turbineSpeed);
-                Draw.rect(AllBurnerGenerator.this.capRegion, this.x, this.y);
-                if (AllBurnerGenerator.this.hasLiquids) {
-                    Drawf.liquid(AllBurnerGenerator.this.liquidRegion, this.x, this.y, this.liquids.total() / AllBurnerGenerator.this.liquidCapacity, this.liquids.current().color);
+            if (GasBurnerGenerator.this.turbineRegions[0].found()) {
+                Draw.rect(GasBurnerGenerator.this.turbineRegions[0], this.x, this.y, this.totalTime * GasBurnerGenerator.this.turbineSpeed);
+                Draw.rect(GasBurnerGenerator.this.turbineRegions[1], this.x, this.y, -this.totalTime * GasBurnerGenerator.this.turbineSpeed);
+                Draw.rect(GasBurnerGenerator.this.capRegion, this.x, this.y);
+                if (GasBurnerGenerator.this.hasLiquids) {
+                    Drawf.liquid(GasBurnerGenerator.this.liquidRegion, this.x, this.y, this.liquids.total() / GasBurnerGenerator.this.liquidCapacity, this.liquids.current().color);
                 }
-                if (AllBurnerGenerator.this.hasGas) {
-                    Drawf.liquid(AllBurnerGenerator.this.gasRegion, this.x, this.y, this.gasses.total() / AllBurnerGenerator.this.gasCapacity, this.gasses.current().color);
+                if (GasBurnerGenerator.this.hasGas) {
+                    Drawf.liquid(GasBurnerGenerator.this.gasRegion, this.x, this.y, this.gasses.total() / GasBurnerGenerator.this.gasCapacity, this.gasses.current().color);
                 }
             }
 

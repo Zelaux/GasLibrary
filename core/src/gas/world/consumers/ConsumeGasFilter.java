@@ -1,5 +1,6 @@
 package gas.world.consumers;
 
+import gas.annotations.GasAnnotations;
 import gas.content.Gasses;
 import gas.gen.GasBuilding;
 import gas.type.Gas;
@@ -14,7 +15,7 @@ import mindustry.ui.MultiReqImage;
 import mindustry.ui.ReqImage;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
-
+@GasAnnotations.GasAddition(analogue = "mindustry.world.consumers.ConsumeLiquidFilter")
 public class ConsumeGasFilter extends ConsumeGasBase {
     public final Boolf<Gas> filter;
 

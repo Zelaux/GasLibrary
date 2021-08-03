@@ -1,5 +1,6 @@
 package gas.world.blocks.power;
 
+import gas.annotations.GasAnnotations;
 import gas.gen.GasBuilding;
 import arc.Core;
 import arc.math.Mathf;
@@ -13,6 +14,7 @@ import mindustry.world.meta.BlockFlag;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 
+@GasAnnotations.GasAddition(analogue = "auto")
 public class GasPowerGenerator extends GasPowerDistributor {
     public float powerProduction;
     public Stat generationType;

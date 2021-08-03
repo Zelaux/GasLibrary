@@ -1,10 +1,11 @@
 package gas.world.meta;
 
+import gas.annotations.GasAnnotations;
 import gas.type.Gas;
 import gas.ui.GasDisplay;
 import arc.scene.ui.layout.Table;
 import mindustry.world.meta.StatValue;
-
+@GasAnnotations.GasAddition
 public class GasValue  implements StatValue {
 
     private final Gas gas;

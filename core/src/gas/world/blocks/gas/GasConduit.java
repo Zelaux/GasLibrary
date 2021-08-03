@@ -21,6 +21,7 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.Autotiler;
 import mindustry.world.blocks.distribution.ChainedBuilding;
 
+@GasAnnotations.GasAddition()
 public class GasConduit extends GasGasBlock implements Autotiler {
     public final int timerFlow;
     public Color botColor;

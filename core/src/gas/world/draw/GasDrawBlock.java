@@ -1,22 +1,34 @@
 package gas.world.draw;
 
+import arc.math.Rand;
+import gas.annotations.GasAnnotations;
 import gas.world.blocks.production.GasGenericCrafter;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.world.Block;
+import mindustry.world.blocks.production.GenericCrafter;
 
+@GasAnnotations.GasAddition(analogue = "auto")
 public class GasDrawBlock {
-    public GasDrawBlock() {
+    protected static final Rand rand = new Rand();
+
+    /** Draws the block. */
+    public void draw(GasGenericCrafter.GasGenericCrafterBuild build){
+        Draw.rect(build.block.region, build.x, build.y, build.block.rotate ? build.rotdeg() : 0);
     }
 
-    public void draw(GasGenericCrafter.GasGenericCrafterBuild entity) {
-        Draw.rect(entity.block.region, entity.x, entity.y, entity.block.rotate ? entity.rotdeg() : 0.0F);
+    /** Draws any extra light for the block. */
+    public void drawLight(GasGenericCrafter.GasGenericCrafterBuild  build){
+
     }
 
-    public void load(Block block) {
+    /** Load any relevant texture regions. */
+    public void load(Block block){
+
     }
 
-    public TextureRegion[] icons(Block block) {
+    /** @return the generated icons to be used for this block. */
+    public TextureRegion[] icons(Block block){
         return new TextureRegion[]{block.region};
     }
 }

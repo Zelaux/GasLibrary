@@ -30,6 +30,7 @@ import mindustry.world.meta.StatUnit;
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
 
+@GasAnnotations.GasAddition(analogue = "auto")
 public class GasImpactReactor extends GasPowerGenerator{
     public final int timerUse = timers++;
 

@@ -1,11 +1,11 @@
 package gas.world;
 
 import acontent.world.meta.AStats;
-import gas.content.Gasses;
+import gas.annotations.GasAnnotations;
 import gas.gen.GasBuilding;
 import gas.gen.GasContentRegions;
 import gas.type.Gas;
-import gas.world.consumers.ConsumeGasses;
+import gas.world.consumers.ConsumeGas;
 import gas.world.consumers.GasConsumers;
 import arc.Core;
 import arc.func.Cons;
@@ -32,7 +32,7 @@ import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
 
 import static mindustry.Vars.tilesize;
-
+@GasAnnotations.GasAddition
 public class GasBlock extends Block {
     public final GasConsumers consumes = new GasConsumers();
     public boolean hasGas = false;
@@ -64,10 +64,10 @@ public class GasBlock extends Block {
                     }
                 } else {
                     ConsumeLiquid ix;
-                    ConsumeGasses ig;
+                    ConsumeGas ig;
                     if (c instanceof ConsumeLiquid && (ix = (ConsumeLiquid) c) == c) {
                         cons.get(ix.liquid);
-                    } else if (c instanceof ConsumeGasses && (ig = (ConsumeGasses) c) == c) {
+                    } else if (c instanceof ConsumeGas && (ig = (ConsumeGas) c) == c) {
                         cons.get(ig.gas);
                     }
                 }
@@ -222,8 +222,8 @@ public class GasBlock extends Block {
         }
         if (hasGas) {
             Func<GasBuilding, Gas> current;
-            if (consumes.hasGas() && this.consumes.getGas() instanceof ConsumeGasses) {
-                Gas gas = ((ConsumeGasses) this.consumes.getGas()).gas;
+            if (consumes.hasGas() && this.consumes.getGas() instanceof ConsumeGas) {
+                Gas gas = ((ConsumeGas) this.consumes.getGas()).gas;
                 current = (entity) -> {
                     return gas;
                 };
