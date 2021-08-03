@@ -283,6 +283,8 @@ jar {
 
     from(rootDir) {
         include "mod.hjson"
+        include "mod.json"
+        include "icon.png"
     }
 
     from("core/assets/") {
