@@ -6,5 +6,4 @@ import mindustry.world.meta.StatCat;
 
 public class GasStats {
     public static AStat gasCapacity = AStat.get("gasCapacity", AStatCat.get("gasses", StatCat.liquids.ordinal()+1));
-
 }

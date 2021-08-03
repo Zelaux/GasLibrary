@@ -1,6 +1,6 @@
 package gas.tools;
 
-import ModVars.GasVars;
+import gas.GasVars;
 import arc.Core;
 import arc.files.Fi;
 import arc.graphics.Pixmap;
