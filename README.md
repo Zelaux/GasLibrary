@@ -107,7 +107,7 @@ dependencies {
 }
 ```
 
-And don't forget to add the dependency to mod. (H) json
+And don't forget to add the dependency to mod. (h).json
 ```hjson
 dependencies: ["gas-library-java"]
 ```
