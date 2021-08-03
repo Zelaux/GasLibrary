@@ -23,63 +23,8 @@ public class YourGasses implements ContentList {
     }
 }
 ```
-Or make a separate class for this:
 
-YourGasses.java
-```java
-package com.examplemod.blocks;
-
-import acontent.world.meta.AStat;
-import acontent.world.meta.AStatCat;
-import mindustry.world.meta.StatCat;
-
-public class YourStats {
-    public static final AStatCat yourCategory2=AStatCat.get("your_category2");
-    public static final AStat yourStat=AStat.get("your_stat","your_category");
-    public static final AStat yourStat2=AStat.get("your_stat1", AStatCat.get("your_category2"));
-    public static final AStat yourStat3=AStat.get("your_stat2", StatCat.function);
-}
-```
-YourBlock.java
-```java
-package com.examplemod.blocks;
-
-import acontent.world.meta.AStats;
-import mindustry.world.Block;
-
-public class YourBlock extends Block {
-    public AStats aStats=new AStats();
-    public YourBlock(String name) {
-        super(name);
-        stats=aStats.copy(stats);
-    }
-
-    @Override
-    public void setStats() {
-        super.setStats();
-        aStats.add(YourStats.yourStat,/*your statValue*/);
-        aStats.add(YourStats.yourStat2,/*your statValue*/);
-        aStats.add(YourStats.yourStat3,/*your statValue*/);
-        aStats.add(Stat.health,/*your statValue*/);
-    }
-}
-```
-You can use index at the end of each .get method to change the position in the stat list or stat category.
-without index:
-```java
-public class GasStats {
-    public static AStat gasCapacity = AStat.get("gasCapacity", AStatCat.get("gasses"));
-}
-```
-![image](https://user-images.githubusercontent.com/58040045/127939116-af61d188-019b-4c08-a782-b478c02fe8e5.png)
-
-with index:
-```java
-public class GasStats {
-    public static AStat gasCapacity = AStat.get("gasCapacity", AStatCat.get("gasses", StatCat.liquids.ordinal()+1));
-}
-```
-![image](https://user-images.githubusercontent.com/58040045/127939214-da6bb475-14d6-4a36-a6bf-1335effe659d.png)
+You can see all the classes and static method added by the mod [here](https://github.com/Zelaux/GasLibrary/blob/master/AllClassesAndMethods.md "All classes and method")
 
 ## Mindustry Mod By Zelaux
 
