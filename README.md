@@ -25,6 +25,7 @@ public class YourGasses implements ContentList {
 ```
 
 You can see all the classes and static method added by the mod [here](https://github.com/Zelaux/GasLibrary/blob/master/AllClassesAndMethods.md "All classes and method")
+If you did not find the class you need, then you can make a Pull request or Issues.
 
 ## Mindustry Mod By Zelaux
 
