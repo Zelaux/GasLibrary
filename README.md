@@ -1,38 +1,31 @@
 GasLirary
 ========
-
 `GasLirary` is a Mindustry java mod library for making new content type: Gas.
-
-### Example
-You can initialize your stats and your categories in the setStats method of Block:
-YourBlock.java
+### Usage/Examples
+Gas is created in the same way as Item or Liquid, but in terms of parameters it is very similar to Liquid
+YourGasses.java
 ```java
-package com.examplemod.blocks;
+package example;
 
-import acontent.world.meta.AStat;
-import acontent.world.meta.AStats;
-import mindustry.world.Block;
+import arc.graphics.Color;
+import gas.type.Gas;
+import mindustry.ctype.ContentList;
 
-public class YourBlock extends Block {
-    public AStats aStats=new AStats();
-    public YourBlock(String name) {
-        super(name);
-        stats=aStats.copy(stats);
-    }
-
+public class YourGasses implements ContentList {
+    public static Gas oxygen;
     @Override
-    public void setStats() {
-        super.setStats();
-        aStats.add(AStat.get("your_stat","your_category"),/*your statValue*/);
-        aStats.add(AStat.get("your_stat1", AStatCat.get("your_category2")),/*your statValue*/);
-        aStats.add(AStat.get("your_stat2", StatCat.function),/*your statValue*/);
-        aStats.add(Stat.health,/*your statValue*/);
+    public void load() {
+        oxygen=new Gas("oxygen"){{
+            color = Color.valueOf("bcf9ff");
+            flammability = 0.7f;
+            explosiveness = 0.9f;
+        }};
     }
 }
 ```
 Or make a separate class for this:
 
-YourStats.java
+YourGasses.java
 ```java
 package com.examplemod.blocks;
 
@@ -71,6 +64,22 @@ public class YourBlock extends Block {
     }
 }
 ```
+You can use index at the end of each .get method to change the position in the stat list or stat category.
+without index:
+```java
+public class GasStats {
+    public static AStat gasCapacity = AStat.get("gasCapacity", AStatCat.get("gasses"));
+}
+```
+![image](https://user-images.githubusercontent.com/58040045/127939116-af61d188-019b-4c08-a782-b478c02fe8e5.png)
+
+with index:
+```java
+public class GasStats {
+    public static AStat gasCapacity = AStat.get("gasCapacity", AStatCat.get("gasses", StatCat.liquids.ordinal()+1));
+}
+```
+![image](https://user-images.githubusercontent.com/58040045/127939214-da6bb475-14d6-4a36-a6bf-1335effe659d.png)
 
 ## Mindustry Mod By Zelaux
 
