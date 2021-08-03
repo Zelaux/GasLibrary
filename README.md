@@ -97,17 +97,17 @@ Depend via Maven:
 <dependency>
 	    <groupId>com.github.Zelaux.GasLirary</groupId>
 	    <artifactId>core</artifactId>
-	    <version>v1.1</version>
+	    <version>v1.2</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
 dependencies {
-        implementation 'com.github.Zelaux.GasLirary:v1.1'
+        implementation 'com.github.Zelaux.GasLirary:v1.2'
 }
 ```
 
 And don't forget to add the dependency to mod. (H) json
 ```hjson
-dependencies: ["gas-lib-java"]
+dependencies: ["gas-library-java"]
 ```
