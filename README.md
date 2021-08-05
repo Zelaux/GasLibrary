@@ -1,6 +1,8 @@
 GasLirary
 ========
 `GasLirary` is a Mindustry java mod library for making new content type: Gas.
+<img width="960" alt="banner2" src="https://user-images.githubusercontent.com/58040045/128306487-250b2dab-ded6-4fa0-a582-d4e99bb67098.png">
+
 ### Usage/Examples
 ###### Gas creating
 Gas is created in the same way as Item or Liquid, but in terms of parameters it is very similar to Liquid
@@ -97,13 +99,13 @@ Depend via Maven:
 <dependency>
 	    <groupId>com.github.Zelaux.GasLirary</groupId>
 	    <artifactId>core</artifactId>
-	    <version>v1.2</version>
+	    <version>v1.3</version>
 </dependency>
 ```
 or Gradle:
 ```groovy
 dependencies {
-        implementation 'com.github.Zelaux.GasLirary:v1.2'
+        implementation 'com.github.Zelaux.GasLirary:v1.3'
 }
 ```
 
