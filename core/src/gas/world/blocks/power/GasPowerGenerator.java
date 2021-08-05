@@ -14,7 +14,7 @@ import mindustry.world.meta.BlockFlag;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 
-@GasAnnotations.GasAddition(analogue = "auto")
+@GasAnnotations.GasAddition(analogue = "mindustry.world.blocks.power.PowerGenerator")
 public class GasPowerGenerator extends GasPowerDistributor {
     public float powerProduction;
     public Stat generationType;

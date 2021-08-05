@@ -19,39 +19,42 @@ public class Clouds {
     }
 
     public static void deposit(Tile tile, Tile source, Gas gas, float amount) {
-        deposit(tile, source, gas, amount, 0);
+        deposit(tile, source, gas, amount,true);
     }
 
     public static void deposit(Tile tile, Gas gas, float amount) {
-        deposit(tile, tile, gas, amount, 0);
+        deposit(tile, tile, gas, amount, true);
     }
 
     public static Cloud get(Tile tile) {
         return map.get(tile.pos());
     }
 
-    public static void deposit(Tile tile, Tile source, Gas gas, float amount, int generation) {
-        if (tile != null) {
-            Cloud c = map.get(tile.pos());
-            if (c == null) {
-                Cloud cloud = Cloud.create();
-                cloud.tile(tile);
-                cloud.gas(gas);
-                cloud.amount(amount);
-                cloud.generation(generation);
-                cloud.set((tile.worldx() + source.worldx()) / 2.0F, (tile.worldy() + source.worldy()) / 2.0F);
-                cloud.add();
-                map.put(tile.pos(), cloud);
-            } else if (c.gas() == gas) {
-                c.accepting(Math.max(amount, c.accepting()));
-                if (generation == 0 && c.lastRipple <= Time.time - 40.0F && c.amount() >= 35.0F) {
-//                        Fx.ripple.at((tile.worldx() + source.worldx()) / 2.0F, (tile.worldy() + source.worldy()) / 2.0F, 1.0F, c.gas().color);
-                    c.lastRipple = Time.time;
-                }
-            } else {
-                c.amount(c.amount() + reactPuddle(c.gas(), gas, amount, c.tile(), (c.x() + source.worldx()) / 2.0F, (c.y() + source.worldy()) / 2.0F));
-            }
+    public static void deposit(Tile tile, Tile source, Gas gas, float amount,boolean initial) {
+        if(tile == null) return;
 
+        if(tile.floor().solid){
+            return;
+        }
+
+        Cloud p = map.get(tile.pos());
+        if(p == null){
+            Cloud cloud = Cloud.create();
+            cloud.tile = tile;
+            cloud.gas = gas;
+            cloud.amount = amount;
+            cloud.set((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f);
+            cloud.add();
+            map.put(tile.pos(), cloud);
+        }else if(p.gas == gas){
+            p.accepting = Math.max(amount, p.accepting);
+
+            if(initial && p.lastRipple <= Time.time - 40f && p.amount >= maxGas / 2f){
+                Fx.ripple.at((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f, 1f, p.gas.color);
+                p.lastRipple = Time.time;
+            }
+        }else{
+            p.amount += reactCloud(p.gas, gas, amount, p.tile, (p.x + source.worldx()) / 2f, (p.y + source.worldy()) / 2f);
         }
     }
 
@@ -65,7 +68,7 @@ public class Clouds {
         map.put(cloud.tile().pos(), cloud);
     }
 
-    private static float reactPuddle(Gas dest, Gas gas, float amount, Tile tile, float x, float y) {
+    private static float reactCloud(Gas dest, Gas gas, float amount, Tile tile, float x, float y) {
         if (dest==null || gas==null)return 0.0F;
         if (dest.flammability > 0.3F && gas.temperature > 0.7F || gas.flammability > 0.3F && dest.temperature > 0.7F) {
             Fires.create(tile);
@@ -91,10 +94,5 @@ public class Clouds {
         }
 
         return 0.0F;
-    }
-
-    private static boolean canStayOn(Gas gas, Gas other) {
-        return false;
-//        return gas == Liquids.oil && other == Liquids.water;
     }
 }

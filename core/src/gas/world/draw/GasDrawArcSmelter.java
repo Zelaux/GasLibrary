@@ -16,7 +16,7 @@ import gas.world.blocks.production.GasGenericCrafter;
 import mindustry.world.Block;
 import mindustry.world.blocks.production.GenericCrafter.GenericCrafterBuild;
 import mindustry.world.draw.DrawBlock;
-@GasAnnotations.GasAddition(analogue = "auto")
+@GasAnnotations.GasAddition(analogue = "mindustry.world.draw.DrawArcSmelter")
 public class GasDrawArcSmelter extends GasDrawBlock {
     public TextureRegion top, bottom;
     public Color flameColor = Color.valueOf("f58349"), midColor = Color.valueOf("f2d585");

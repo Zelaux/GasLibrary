@@ -242,7 +242,6 @@ task badPack(dependsOn: [classes, configurations.runtimeClasspath]) {
             into "../core/assets/sprites"
         }
 
-        println("\n\nPacking normal 4096 sprites...\n\n")
 
         println "Time taken for copieng sprites: ${(System.currentTimeMillis() - ms) / 1000f}"
     }
@@ -255,4 +254,30 @@ task genSprites(dependsOn: classes, type: JavaExec) {
     jvmArgs("-Djava.awt.headless=true")
     standardInput = System.in
     workingDir = genFolder
+}
+task downloadCompDead (type: JavaExec) {
+    doFirst {
+        javaexec {
+            maxHeapSize = "4048m"
+            args("-Xmx4048m", "--enable-preview", mindustryVersion)
+            main = "gas.tools.AnukeCompDownloader"
+            classpath = sourceSets.main.runtimeClasspath
+            workingDir = "../"
+//            jvmArgs ("-Xmx2024m")
+//            systemProperties("-Xmx2024m")
+        }
+    }
+}
+task downloadComp (dependsOn: [classes, configurations.runtimeClasspath]) {
+    doFirst {
+        javaexec {
+            maxHeapSize = "4048m"
+            args("-Xmx4048m", "--enable-preview", mindustryVersion)
+            main = "gas.tools.AnukeCompDownloader"
+            classpath = sourceSets.main.runtimeClasspath
+            workingDir = "../"
+//            jvmArgs ("-Xmx2024m")
+//            systemProperties("-Xmx2024m")
+        }
+    }
 }

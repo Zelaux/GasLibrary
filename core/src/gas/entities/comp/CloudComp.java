@@ -19,6 +19,7 @@ import gas.entities.bullets.GasBulletType;
 import gas.gen.Cloudc;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.content.Bullets;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
 import mindustry.entities.Fires;
@@ -40,10 +41,10 @@ import static mindustry.entities.Puddles.maxLiquid;
 @GasAnnotations.EntityDef(value = {Cloudc.class}, pooled = true)
 @GasAnnotations.Component(base = true)
 public abstract class CloudComp implements Posc, Cloudc, Drawc {
-    private static final int maxGeneration = 2;
     private static final Rect rect = new Rect(), rect2 = new Rect();
     private static int seeds;
-
+private static boolean hasWall;
+private static int blockCounter;
     @GasAnnotations.Import
     int id;
     @GasAnnotations.Import
@@ -69,24 +70,27 @@ public abstract class CloudComp implements Posc, Cloudc, Drawc {
         amount += accepting;
         accepting = 0f;
 
-        if (this.amount >= maxGas / 1.5f && this.generation < maxGeneration) {
+        if (this.amount >= maxGas / 1.5f) {
             float deposited = Math.min((amount - maxGas / 1.5f) / 4f, 0.3f) * Time.delta;
-            for (Point2 point : Geometry.d4) {
+            int targets = 0;
+            for(Point2 point : Geometry.d4){
                 Tile other = world.tile(tile.x + point.x, tile.y + point.y);
-                if (other != null && other.block() == Blocks.air) {
-                    Clouds.deposit(other, tile, gas, deposited, generation + 1);
-                    amount -= deposited / 2f; //tweak to speed up/slow down Puddle propagation
+                if(other != null && other.block() == Blocks.air){
+                    targets ++;
+                    Clouds.deposit(other, tile, gas, deposited, false);
                 }
             }
+            amount -= deposited * targets;
         }
 
-        this.amount = Mathf.clamp(this.amount, 0.0F, 70.0F);
-        if (this.amount <= 0.0F) {
-            this.remove();
+        amount = Mathf.clamp(amount, 0, maxLiquid);
+
+        if(amount <= 0f){
+            remove();
         }
 
-        if (amount >= maxLiquid / 2f && updateTime <= 0f) {
-            Units.nearby(rect.setSize(Mathf.clamp(amount / (maxLiquid / 1.5f)) * 10f).setCenter(x, y), unit -> {
+        if (amount >= maxGas / 2f && updateTime <= 0f) {
+            Units.nearby(rect.setSize(Mathf.clamp(amount / (maxGas / 1.5f)) * 10f).setCenter(x, y), unit -> {
                 if (unit.isGrounded() && !unit.hovering) {
                     unit.hitbox(rect2);
                     if (rect.overlaps(rect2)) {
@@ -108,7 +112,13 @@ public abstract class CloudComp implements Posc, Cloudc, Drawc {
 
         Puddle puddle = Puddles.get(tile);
         if (puddle != null) {
-            if (puddle.liquid.temperature >= 0.7f && gas.explosiveness >= 0.9f) {
+            if (puddle.liquid.temperature >= 0.7f && gas.temperature>=0.7f){
+                Fires.create(tile);
+                if(Mathf.chance(0.006 * amount)){
+                    Bullets.fireball.createNet(Team.derelict, x, y, Mathf.random(360f), -1f, 1f, 1f);
+                }
+            }
+            if (puddle.liquid.temperature >= 0.7f && gas.explosiveness >= 0.9f ) {
                 float flammability, explosiveness, radius;
                 flammability = getFlammability() + puddle.getFlammability();
                 explosiveness = gas.explosiveness + puddle.liquid.explosiveness;
@@ -116,14 +126,14 @@ public abstract class CloudComp implements Posc, Cloudc, Drawc {
                 Vars.world.tiles.eachTile((tile) -> {
                     if (tile == null || tile.build == null) return;
                     Building build = tile.build;
-                    AtomicBoolean hasWall = new AtomicBoolean(false);
-                    AtomicInteger countBlocks = new AtomicInteger(0);
+                    hasWall=false;
+                    blockCounter=0;
                     Vars.world.raycastEach(tileX(), tileY(), build.tileX(), build.tileY(), (x, y) -> {
                         Building b = Vars.world.build(x * 8, y * 8);
                         if (b == null) return true;
-                        countBlocks.addAndGet(1);
+                        blockCounter++;
                         if (b.block instanceof Wall) {
-                            hasWall.set(true);
+                            hasWall=true;
                             return false;
                         }
 
@@ -132,7 +142,7 @@ public abstract class CloudComp implements Posc, Cloudc, Drawc {
                     float distance = tile.build.dst(this);
                     float blockIndex = 1;
                     float distanceIndex = 1f - ((distance + 1f) / radius);
-                    if (distance <= radius && !hasWall.get()) tile.build.damage(distanceIndex * (40 / blockIndex));
+                    if (distance <= radius && !hasWall) tile.build.damage(distanceIndex * (40 / blockIndex));
                 });
                 Damage.dynamicExplosion(x, y, flammability, explosiveness, 0, Mathf.clamp((radius), 0, 30), Vars.state.rules.damageExplosions, true, Team.derelict);
                 puddle.amount = Math.max(0, puddle.amount - explosiveness - flammability - radius / 8f);

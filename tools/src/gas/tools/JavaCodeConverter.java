@@ -19,6 +19,13 @@ import java.util.Optional;
 
 public class JavaCodeConverter {
     JavaParser javaParser = new JavaParser();
+    private boolean logProblems=true;
+
+    public JavaCodeConverter() {
+    }
+    public JavaCodeConverter(boolean logProblems) {
+        this.logProblems = logProblems;
+    }
 
     private static Expression binaryFromIf(InstanceOfExpr inst, PatternExpr pattern) {
         Expression expression = inst.getExpression();
@@ -65,8 +72,10 @@ public class JavaCodeConverter {
             }
         }
         ParseResult<CompilationUnit> parseR = javaParser.parse(code);
-        for (Problem problem : parseR.getProblems()) {
-            Log.info("problem: @", problem.toString());
+        if (logProblems){
+            for (Problem problem : parseR.getProblems()) {
+                Log.info("problem: @", problem.toString());
+            }
         }
         CompilationUnit parse = parseR.getResult().get();
         Optional<ClassOrInterfaceDeclaration> classOpt = parse.getClassByName(className);
@@ -114,8 +123,6 @@ public class JavaCodeConverter {
 
     private Seq<Statement> check(Statement statement, boolean add) {
         Seq<Statement> statements = new Seq<>();
-        boolean debug = statement.toString().contains("if (payload instanceof UnitPayload p)");
-        if (debug)Log.info("statement: @",statement);
         if (statement.isIfStmt()) {
             IfStmt ifStmt = statement.asIfStmt();
             Expression condition = ifStmt.getCondition();
@@ -168,7 +175,6 @@ public class JavaCodeConverter {
             }
         }
         if (add) statements.add(statement);
-        if (debug)Log.info("statements: [@]",statements.toString("], ["));
         return statements;
     }
 
@@ -279,7 +285,7 @@ public class JavaCodeConverter {
 
             }
             if (statement != null) {
-                 if (statement.isReturnStmt()) {
+                if (statement.isReturnStmt()) {
                     ReturnStmt returnStmt = statement.asReturnStmt();
                     Optional<Expression> expressionOpt = returnStmt.getExpression();
                     if (expressionOpt.isPresent()) {
