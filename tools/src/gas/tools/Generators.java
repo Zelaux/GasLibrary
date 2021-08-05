@@ -149,7 +149,7 @@ public class Generators {
 
                 try {
                     Pixmap last = null;
-                    if (block.outlineIcon && false) {
+                    if (block.outlineIcon) {
                         GenRegion region = (GenRegion) regions[block.outlinedIcon >= 0 ? block.outlinedIcon : regions.length - 1];
                         Pixmap base = get(region);
                         Pixmap out = last = base.outline(block.outlineColor, block.outlineRadius);
@@ -162,9 +162,11 @@ public class Generators {
                             }
                         }
 
-                        region.path.delete();
+                       if (false){
+                           region.path.delete();
 
-                        save(out, block.name);
+                           save(out, block.name);
+                       }
                     }
 
                     if (!regions[0].found()) {
@@ -189,7 +191,7 @@ public class Generators {
                     }
 
                     if (!(regions.length == 1 && regions[0] == Core.atlas.find(block.name) && shardTeamTop == null)) {
-                        save(image, "block-" + block.name + "-full");
+                        save(image, /*"block-" +*/ block.name + "-full");
                     }
 
                     save(image, "../editor/" + block.name + "-icon-editor");
@@ -356,7 +358,7 @@ public class Generators {
                             true);
                 }
 
-                save(image, "unit-" + type.name + "-full");
+                save(image, /*"unit-" + */type.name + "-full");
 
                 Rand rand = new Rand();
                 rand.setSeed(type.name.hashCode());
@@ -430,7 +432,7 @@ public class Generators {
                     save(image, "../blocks/environment/" + prefix + item.name + (i + 1));
                     save(image, "../editor/editor-" + prefix + item.name + (i + 1));
 
-                    save(image, "block-" + ore.name + "-full");
+                    save(image, /*"block-" +*/ ore.name + "-full");
                     save(image, "../ui/block-" + ore.name + "-ui");
                 }
             });

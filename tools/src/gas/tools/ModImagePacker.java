@@ -1,5 +1,7 @@
 package gas.tools;
 
+import arc.util.serialization.Json;
+import arc.util.serialization.Jval;
 import gas.GasVars;
 import arc.Core;
 import arc.files.Fi;
@@ -17,15 +19,20 @@ import gas.gen.GasEntityMapping;
 import mindustry.Vars;
 import mindustry.ctype.MappableContent;
 import mindustry.ctype.UnlockableContent;
+import mindustry.mod.Mods;
 import mindustry.tools.ImagePacker;
 
 public class ModImagePacker extends ImagePacker {
     static ObjectMap<String, PackIndex> cache = new ObjectMap<>();
+    static Mods.ModMeta modMeta;
 
     public ModImagePacker() {
     }
 
     public static void main(String[] args) throws Exception {
+        Json json = new Json();
+        Fi metaf = Fi.get("../../../../").child("mod.hjson");
+        modMeta = json.fromJson(Mods.ModMeta.class, Jval.read(metaf.readString()).toString(Jval.Jformat.plain));
         Vars.headless = true;
         GasVars.packSprites = true;
         ArcNativesLoader.load();
@@ -165,6 +172,9 @@ public class ModImagePacker extends ImagePacker {
     static void err(String message, Object... args) {
         Log.err(message, args);
 //        throw new IllegalArgumentException(Strings.format(message, args));
+    }
+    public static String full(String name) {
+        return modMeta.name + "-" + name;
     }
 
     static class GenRegion extends TextureAtlas.AtlasRegion {
