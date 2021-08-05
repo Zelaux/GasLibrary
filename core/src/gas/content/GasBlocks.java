@@ -18,14 +18,14 @@ public class GasBlocks implements ContentList {
 
     public void load() {
         gasSource = new GasSource("gas-source") {{
-            localizedName = "Gas Source";
-            description = "Infinitely outputs gasses. Sandbox only.";
+//            localizedName = "Gas Source";
+//            description = "Infinitely outputs gasses. Sandbox only.";
             requirements(Category.liquid, BuildVisibility.sandboxOnly, with());
             alwaysUnlocked = true;
         }};
         gasVoid = new GasVoid("gas-void") {{
-            localizedName = "Gas Void";
-            description = "Removes any liquids. Sandbox only.";
+//            localizedName = "Gas Void";
+//            description = "Removes any liquids. Sandbox only.";
             requirements(Category.liquid, BuildVisibility.sandboxOnly, with());
             alwaysUnlocked = true;
         }};

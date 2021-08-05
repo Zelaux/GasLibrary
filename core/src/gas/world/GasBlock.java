@@ -78,9 +78,9 @@ public class GasBlock extends Block {
 
     @Override
     public void init() {
-        localizedName = Core.bundle.get(getContentType() + "." + this.name + ".name", localizedName);
-        description = Core.bundle.get(getContentType() + "." + this.name + ".description",description);
-        details = Core.bundle.get(getContentType() + "." + this.name + ".details",details);
+//        localizedName = Core.bundle.get(getContentType() + "." + this.name + ".name", localizedName);
+//        description = Core.bundle.get(getContentType() + "." + this.name + ".description",description);
+//        details = Core.bundle.get(getContentType() + "." + this.name + ".details",details);
         super.init();
         for (ConsumeType value : ConsumeType.values()) {
             if (consumes.has(value)) {

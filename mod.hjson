@@ -3,6 +3,6 @@ displayName: "GasLibrary"
 author: "Zelaux"
 description: "Java library for java mods"
 main: "gas.GasLibMod"
-version: 1.3
+version: 1.4
 minGameVersion: 129.2
 dependencies: ["advanced-content-info"]
