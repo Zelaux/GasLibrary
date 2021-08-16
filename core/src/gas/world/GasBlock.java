@@ -1,6 +1,9 @@
 package gas.world;
 
+import acontent.world.meta.AStatUnit;
+import acontent.world.meta.AStatValues;
 import acontent.world.meta.AStats;
+import arc.util.Log;
 import gas.annotations.GasAnnotations;
 import gas.gen.GasBuilding;
 import gas.gen.GasContentRegions;
@@ -154,7 +157,7 @@ public class GasBlock extends Block {
             aStats.add(Stat.itemCapacity, (float) itemCapacity, StatUnit.items);
         }
         if (hasGas && gasCapacity > 0) {
-            aStats.add(GasStats.gasCapacity, gasCapacity, StatUnit.liquidUnits);
+            aStats.add(GasStats.gasCapacity, gasCapacity, AStatUnit.get("gasUnits"));
         }
 
     }
