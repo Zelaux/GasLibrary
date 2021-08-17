@@ -33,8 +33,9 @@ public class GasLoadRegionProcessor extends GasBaseProcessor {
             if(!field.is(Modifier.PUBLIC)){
                 err("@LoadRegion field must be public", field);
             }
-
-            fieldMap.get(field.enclosingType(), Seq::new).add(field);
+            if (!field.is(Modifier.STATIC) && !field.is(Modifier.FINAL)){
+                fieldMap.get(field.enclosingType(), Seq::new).add(field);
+            }
         }
 
         for(ObjectMap.Entry<Stype, Seq<Svar>> entry : fieldMap){
