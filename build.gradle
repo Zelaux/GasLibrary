@@ -1,7 +1,7 @@
 buildscript {
     ext {
        arcHash = "128" as Object
-         mindustryVersion = "v129.2"
+         mindustryVersion = "v130"
          mindustryVersionAnnotations = "v126.2"
          aciVersion = "v1.3"
           modsDirectory = "classic"

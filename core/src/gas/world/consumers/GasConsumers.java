@@ -88,8 +88,8 @@ public class GasConsumers extends Consumers {
         return map[3] != null;
     }
 
-    public Consume getGas() {
-        return (Consume) get(3);
+    public <T extends Consume> T getGas() {
+        return (T)get(3);
     }
 
     public Object get(int type) {

@@ -5,9 +5,11 @@ import acontent.world.meta.AStatValues;
 import acontent.world.meta.AStats;
 import arc.util.Log;
 import gas.annotations.GasAnnotations;
+import gas.content.*;
 import gas.gen.GasBuilding;
 import gas.gen.GasContentRegions;
 import gas.type.Gas;
+import gas.world.blocks.gas.GasGasBlock.*;
 import gas.world.consumers.ConsumeGas;
 import gas.world.consumers.GasConsumers;
 import arc.Core;
@@ -17,6 +19,7 @@ import arc.graphics.Color;
 import arc.math.Mathf;
 import gas.world.meta.GasStats;
 import mindustry.content.Liquids;
+import mindustry.core.*;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
 import mindustry.graphics.Pal;
@@ -37,8 +40,10 @@ import mindustry.world.meta.StatValues;
 import static mindustry.Vars.tilesize;
 @GasAnnotations.GasAddition
 public class GasBlock extends Block {
-    public final GasConsumers consumes = new GasConsumers();
+    /** If true, gasBuildings have a GasModule. */
     public boolean hasGas = false;
+
+    public final GasConsumers consumes = new GasConsumers();
     public float gasCapacity;
     public boolean outputsGas = false;
     public AStats aStats = new AStats();
@@ -169,82 +174,48 @@ public class GasBlock extends Block {
     }
 
     @Override
-    public void setBars() {
-        bars.add("health", (entity) -> {
-            return (new Bar("stat.health", Pal.health, entity::healthf)).blink(Color.white);
-        });
-        if (hasLiquids) {
-            Func<Building, Liquid> current;
-            if (consumes.has(ConsumeType.liquid) && consumes.get(ConsumeType.liquid) instanceof ConsumeLiquid) {
-                Liquid liquid = ((ConsumeLiquid) consumes.get(ConsumeType.liquid)).liquid;
-                current = (entity) -> {
-                    return liquid;
-                };
-            } else {
-                current = (entity) -> {
-                    return entity.liquids == null ? Liquids.water : entity.liquids.current();
-                };
-            }
+    public void setBars(){
+        bars.add("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
 
-            bars.add("liquid", (entity) -> {
-                return new Bar(() -> {
-                    return entity.liquids.get((Liquid) current.get(entity)) <= 0.001F ? Core.bundle.get("bar.liquid") : ((Liquid) current.get(entity)).localizedName;
-                }, () -> {
-                    return ((Liquid) current.get(entity)).barColor();
-                }, () -> {
-                    return entity != null && entity.liquids != null ? entity.liquids.get((Liquid) current.get(entity)) / this.liquidCapacity : 0.0F;
-                });
-            });
+        if(hasLiquids){
+            Func<Building, Liquid> current;
+            if(consumes.has(ConsumeType.liquid) && consumes.get(ConsumeType.liquid) instanceof ConsumeLiquid){
+                Liquid liquid = consumes.<ConsumeLiquid>get(ConsumeType.liquid).liquid;
+                current = entity -> liquid;
+            }else{
+                current = entity -> entity.liquids == null ? Liquids.water : entity.liquids.current();
+            }
+            bars.add("liquid", entity -> new Bar(() -> entity.liquids.get(current.get(entity)) <= 0.001f ? Core.bundle.get("bar.liquid") : current.get(entity).localizedName,
+            () -> current.get(entity).barColor(), () -> entity == null || entity.liquids == null ? 0f : entity.liquids.get(current.get(entity)) / liquidCapacity));
         }
 
-        if (hasPower && consumes.hasPower()) {
+        if(hasPower && consumes.hasPower()){
             ConsumePower cons = consumes.getPower();
             boolean buffered = cons.buffered;
             float capacity = cons.capacity;
-            bars.add("power", (entity) -> {
-                return new Bar(() -> {
-                    return buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int) (entity.power.status * capacity)) : Core.bundle.get("bar.power");
-                }, () -> {
-                    return Pal.powerBar;
-                }, () -> {
-                    return Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0.0F ? 1.0F : entity.power.status;
-                });
-            });
+
+            bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
+            Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
         }
 
-        if (hasItems && configurable) {
-            bars.add("items", (entity) -> {
-                return new Bar(() -> {
-                    return Core.bundle.format("bar.items", entity.items.total());
-                }, () -> {
-                    return Pal.items;
-                }, () -> {
-                    return (float) entity.items.total() / (float) itemCapacity;
-                });
-            });
+        if(hasItems && configurable){
+            bars.add("items", entity -> new Bar(() -> Core.bundle.format("bar.items", entity.items.total()), () -> Pal.items, () -> (float)entity.items.total() / itemCapacity));
         }
-        if (hasGas) {
+
+        if(unitCapModifier != 0){
+            stats.add(Stat.maxUnits, (unitCapModifier < 0 ? "-" : "+") + Math.abs(unitCapModifier));
+        }
+        if(hasGas){
             Func<GasBuilding, Gas> current;
-            if (consumes.hasGas() && this.consumes.getGas() instanceof ConsumeGas) {
-                Gas gas = ((ConsumeGas) this.consumes.getGas()).gas;
-                current = (entity) -> {
-                    return gas;
-                };
-            } else {
-                current = (entity) -> {
-                    return entity.gasses == null ? null : entity.gasses.current();
-                };
+            if(consumes.has(ConsumeType.liquid) && consumes.get(ConsumeType.liquid) instanceof ConsumeGas){
+                Gas gas = consumes.<ConsumeGas>getGas().gas;
+                current = entity -> gas;
+            }else{
+                current = entity -> entity.gasses == null ? null : entity.gasses.current();
             }
+            bars.<GasBuilding>add("liquid", entity -> new Bar(() -> entity.gasses.get(current.get(entity)) <= 0.001f ? Core.bundle.get("bar.liquid") : current.get(entity).localizedName,
+            () -> current.get(entity).barColor(), () -> entity == null || entity.liquids == null ? 0f : entity.gasses.get(current.get(entity)) / liquidCapacity));
 
-            bars.<GasBuilding>add("gas", (entity) -> {
-                return new Bar(() -> {
-                    return entity.gasses.get(current.get(entity)) <= 0.001F ? Core.bundle.get("bar.gas") : (current.get(entity)).localizedName;
-                }, () -> {
-                    return (current.get(entity)).barColor();
-                }, () -> {
-                    return entity != null && entity.gasses != null ? entity.gasses.get(current.get(entity)) / this.gasCapacity : 0.0F;
-                });
-            });
         }
     }
 }

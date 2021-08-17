@@ -127,11 +127,12 @@ abstract class BuilderComp implements Posc, Statusc, Teamc, Rotc {
         if ((core == null && !infinite) || !((tile.build instanceof ConstructBuild && (entity = (ConstructBuild) tile.build) == tile.build))) {
             return;
         }
+        float bs = 1f / entity.buildCost * Time.delta * type.buildSpeed * buildSpeedMultiplier * state.rules.buildSpeed(team);
         // otherwise, update it.
         if (current.breaking) {
-            entity.deconstruct(self(), core, 1f / entity.buildCost * Time.delta * type.buildSpeed * buildSpeedMultiplier * state.rules.buildSpeedMultiplier);
+            entity.deconstruct(self(), core, bs);
         } else {
-            entity.construct(self(), core, 1f / entity.buildCost * Time.delta * type.buildSpeed * buildSpeedMultiplier * state.rules.buildSpeedMultiplier, current.config);
+            entity.construct(self(), core, bs, current.config);
         }
         current.stuck = Mathf.equal(current.progress, entity.progress);
         current.progress = entity.progress;

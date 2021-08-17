@@ -13,68 +13,72 @@ import arc.math.geom.Point2;
 import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.Nullable;
+import mindustry.*;
+import mindustry.annotations.Annotations.*;
+import mindustry.content.*;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.Autotiler;
-import mindustry.world.blocks.distribution.ChainedBuilding;
+import mindustry.world.blocks.distribution.*;
 
 @GasAnnotations.GasAddition()
 public class GasConduit extends GasGasBlock implements Autotiler {
-    public final int timerFlow;
-    public Color botColor;
-    public boolean drawBottom = false;
-    public @GasAnnotations.Load(value = "@-top-#", length = 5) TextureRegion[] topRegions;
-    public @GasAnnotations.Load(value = "@-bottom-#", length = 5, fallback = "conduit-bottom-#") TextureRegion[] botRegions;
-    public boolean leaks;
+    public final int timerFlow = timers++;
 
-    public GasConduit(String name) {
+    public Color botColor = Color.valueOf("565656");
+
+    public @Load(value = "@-top-#", length = 5) TextureRegion[] topRegions;
+    public @Load(value = "@-bottom-#", length = 5, fallback = "conduit-bottom-#") TextureRegion[] botRegions;
+    public @Load("@-cap") TextureRegion capRegion;
+
+    public boolean leaks = true;
+    public @Nullable Block junctionReplacement, bridgeReplacement;
+
+    public GasConduit(String name){
         super(name);
-        this.timerFlow = this.timers++;
-        this.botColor = Color.valueOf("565656");
-        this.hasGas = true;
-        this.gasCapacity = 100f;
-        this.leaks = true;
-        this.outputsGas = true;
-        this.rotate = true;
-        this.update = true;
-        this.solid = false;
-        this.floating = true;
-        this.conveyorPlacement = true;
-//        this.noUpdateDisabled = true;
+        rotate = true;
+        solid = false;
+        floating = true;
+        conveyorPlacement = true;
+        noUpdateDisabled = true;
     }
 
     @Override
     public void init() {
         super.init();
+
+        if(junctionReplacement == null) junctionReplacement = Vars.content.blocks().find(block -> block instanceof GasJunction);
+        if(bridgeReplacement == null || !(bridgeReplacement instanceof ItemBridge)) bridgeReplacement = Blocks.bridgeConduit;
     }
 
 
     public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        int[] bits = this.getTiling(req, list);
-        if (bits != null) {
-            Draw.scl((float) bits[1], (float) bits[2]);
-            if (drawBottom) {
-                Draw.color(this.botColor);
-                Draw.alpha(0.5F);
-                Draw.rect(this.botRegions[bits[0]], req.drawx(), req.drawy(), (float) (req.rotation * 90));
-            }
-            Draw.color();
-            Draw.rect(this.topRegions[bits[0]], req.drawx(), req.drawy(), (float) (req.rotation * 90));
-            Draw.scl();
-        }
+        int[] bits = getTiling(req, list);
+
+        if(bits == null) return;
+
+        Draw.scl(bits[1], bits[2]);
+        Draw.color(botColor);
+        Draw.alpha(0.5f);
+        Draw.rect(botRegions[bits[0]], req.drawx(), req.drawy(), req.rotation * 90);
+        Draw.color();
+        Draw.rect(topRegions[bits[0]], req.drawx(), req.drawy(), req.rotation * 90);
+        Draw.scl();
     }
 
     public Block getReplacement(BuildPlan req, Seq<BuildPlan> requests) {
-        Boolf<Point2> cont = (p) -> {
-            return requests.contains((o) -> {
-                return o.x == req.x + p.x && o.y == req.y + p.y && o.rotation == req.rotation &&
-                        (req.block instanceof GasConduit);
-            });
-        };
-        return this;
+        if(junctionReplacement == null) return this;
+
+        Boolf<Point2> cont = p -> requests.contains(o -> o.x == req.x + p.x && o.y == req.y + p.y && o.rotation == req.rotation && (req.block instanceof Conduit || req.block instanceof LiquidJunction));
+        return cont.get(Geometry.d4(req.rotation)) &&
+        cont.get(Geometry.d4(req.rotation - 2)) &&
+        req.tile() != null &&
+        req.tile().block() instanceof GasConduit &&
+        Mathf.mod(req.build().rotation - req.rotation, 2) == 1 ? Blocks.liquidJunction : this;
+        Mathf.mod(req.build().rotation - req.rotation, 2) == 1 ? junctionReplacement : this;
 //        return (Block)(cont.get(Geometry.d4(req.rotation)) && cont.get(Geometry.d4(req.rotation - 2)) && req.tile() != null &&
 //                req.tile().block() instanceof Conduit && Mathf.mod(req.build().rotation - req.rotation, 2) == 1 ? Blocks.liquidJunction : this);
     }
