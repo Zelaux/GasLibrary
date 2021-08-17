@@ -15,9 +15,9 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.visitor.*;
 import com.github.javaparser.resolution.types.*;
-import root.gasBlockConverter.visitors.*;
+import gas.tools.gasBlockConverter.visitors.*;
 
-import static root.gasBlockConverter.CreatingGasBlocks.javaParser;
+import static gas.tools.gasBlockConverter.CreatingGasBlocks.javaParser;
 
 public class GasBlocksConverter{
     static Seq<ImportDeclaration> packagesToImport = new Seq<>();
