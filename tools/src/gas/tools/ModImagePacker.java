@@ -1,5 +1,6 @@
 package gas.tools;
 
+import arc.graphics.gl.*;
 import arc.util.serialization.Json;
 import arc.util.serialization.Jval;
 import gas.GasVars;
@@ -33,14 +34,18 @@ public class ModImagePacker extends ImagePacker {
         Json json = new Json();
         Fi metaf = Fi.get("../../../../").child("mod.hjson");
         modMeta = json.fromJson(Mods.ModMeta.class, Jval.read(metaf.readString()).toString(Jval.Jformat.plain));
+
         Vars.headless = true;
-        GasVars.packSprites = true;
         ArcNativesLoader.load();
+
+        GasVars.packSprites = true;
+
         Log.logger = new Log.NoopLogHandler();
         Vars.content = new GasContentLoader();
         GasEntityMapping.init();
-        Vars.content.createBaseContent();
+//        Vars.content.createBaseContent();
         Vars.content.createModContent();
+
         Log.logger = new Log.DefaultLogHandler();
         Fi.get("../../../assets-raw/sprites_out").walk((path) -> {
             if (path.extEquals("png")) {

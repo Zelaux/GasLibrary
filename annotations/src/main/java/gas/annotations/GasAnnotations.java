@@ -207,4 +207,14 @@ public class GasAnnotations {
     }
     @Retention(RetentionPolicy.SOURCE)
     public @interface CashAnnotation2{}
+    //ONLY FOR GENERATORS
+@Retention(RetentionPolicy.SOURCE)
+    public @interface Struct{
+    }
+
+    //ONLY FOR GENERATORS
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface StructField{
+        int value() default 0;
+    }
 }

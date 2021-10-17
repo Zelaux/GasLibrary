@@ -108,7 +108,7 @@ public class GasLoadRegionProcessor extends GasBaseProcessor {
 
     private String parse(String value){
         value = '"' + value + '"';
-        value = value.replace("@size", "\" + ((Gas.world.GasBlock)content).size + \"");
+        value = value.replace("@size", "\" + ((gas.world.GasBlock)content).size + \"");
         value = value.replace("@", "\" + content.name + \"");
         value = value.replace("#1", "\" + INDEX0 + \"");
         value = value.replace("#2", "\" + INDEX1 + \"");

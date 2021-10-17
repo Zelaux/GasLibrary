@@ -3,7 +3,7 @@ buildscript {
        arcHash = "128" as Object
          mindustryVersion = "v130"
          mindustryVersionAnnotations = "v126.2"
-         aciVersion = "v1.3"
+         aciVersion = "v1.4"
           modsDirectory = "classic"
     }
     repositories {

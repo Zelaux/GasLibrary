@@ -6,6 +6,7 @@ import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Strings;
 import arc.util.Time;
+import gas.tools.parsers.*;
 import org.apache.commons.io.FileUtils;
 
 import java.net.URL;
@@ -32,23 +33,10 @@ public class AnukeCompDownloader {
             folder.mkdirs();
             Fi compJava = folder.child("compJava");
             Fi finalComp = folder.child("finalComp");
-            boolean downloadNew = false;
 
-            Fi version = new Fi("compDownloader").child("version.txt");
-            Fi sourcesFi = new Fi("compDownloader").child("sources.zip");
-            if (!version.exists() || !version.readString().equals(mindustryVersion)) {
-                downloadNew = true;
-                version.writeString(mindustryVersion);
-            }
-            if (downloadNew || !sourcesFi.exists()) {
-                Log.info("Downloading new comps version");
-                Time.mark();
-                FileUtils.copyURLToFile(new URL("https://codeload.github.com/Anuken/Mindustry/zip/refs/tags/" + mindustryVersion), sourcesFi.file(), 10000, 10000);
-                Log.info("Time to download: @ms", Time.elapsed());
-            } else {
-                Log.info("Game version and comps version are the same");
-            }
-            ZipFi sourceZip = new ZipFi(sourcesFi);
+            LibrariesDownloader.download(mindustryVersion);
+
+            ZipFi sourceZip = LibrariesDownloader.coreZip();
 
             Fi child = sourceZip.list()[0].child("core").child("src").child("mindustry").child("entities").child("comp");
             for (Fi fi : child.list()) {

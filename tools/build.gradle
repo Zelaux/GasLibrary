@@ -281,3 +281,29 @@ task downloadComp (dependsOn: [classes, configurations.runtimeClasspath]) {
         }
     }
 }
+task makeBlocksDead (type: JavaExec) {
+    doFirst {
+        javaexec {
+            maxHeapSize = "4048m"
+            args("-Xmx4048m", "--enable-preview", mindustryVersion)
+            main = "gas.tools.CreatingGasBlocks"
+            classpath = sourceSets.main.runtimeClasspath
+            workingDir = "../"
+//            jvmArgs ("-Xmx2024m")
+//            systemProperties("-Xmx2024m")
+        }
+    }
+}
+task makeBlocks (dependsOn: [classes, configurations.runtimeClasspath]) {
+    doFirst {
+        javaexec {
+            maxHeapSize = "4048m"
+            args("-Xmx4048m", "--enable-preview", mindustryVersion)
+            main = "gas.tools.CreatingGasBlocks"
+            classpath = sourceSets.main.runtimeClasspath
+            workingDir = "../"
+//            jvmArgs ("-Xmx2024m")
+//            systemProperties("-Xmx2024m")
+        }
+    }
+}

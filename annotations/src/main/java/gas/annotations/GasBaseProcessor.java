@@ -30,6 +30,7 @@ import java.util.Set;
 public abstract class GasBaseProcessor extends BaseProcessor {
     static final String parentName = "mindustry.gen";
     public static String packageName = "gas.gen";
+    public static String rootPackageName="";
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -39,8 +40,7 @@ public abstract class GasBaseProcessor extends BaseProcessor {
                 String path = Fi.get(filer.getResource(StandardLocation.CLASS_OUTPUT, "no", "no")
                         .toUri().toURL().toString().substring(OS.isWindows ? 6 : "file:".length()))
                         .parent().parent().parent().parent().parent().parent().parent().toString().replace("%20", " ");
-                rootDirectory = Fi.get(path);
-                if (rootDirectory.name().equals("core"))rootDirectory=rootDirectory.parent();
+                rootDirectory = Fi.get(path).parent();
             }catch(IOException e){
                 throw new RuntimeException(e);
             }
