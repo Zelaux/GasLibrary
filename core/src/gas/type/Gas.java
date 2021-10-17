@@ -3,7 +3,6 @@ package gas.type;
 import arc.graphics.Color;
 import arc.struct.Seq;
 import gas.content.Gasses;
-import gas.core.GasContentLoader;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.type.StatusEffect;

@@ -1,10 +1,26 @@
 buildscript {
     ext {
-       arcHash = "128" as Object
-         mindustryVersion = "v130"
-         mindustryVersionAnnotations = "v126.2"
-         aciVersion = "v1.4"
-          modsDirectory = "classic"
+        arcHash = "v132" as Object
+        packerHash = '128'
+        mindustryVersion = "v132"
+        mindustryVersionAnnotations = "v126.2"
+        aciVersion = "v1.3"
+        modsDirectories = [];
+        def file = new File(rootDir, "modsDirectoies.txt");
+//        println "abs->"+file.getAbsolutePath();
+        if (file.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            reader.lines().forEach(line -> modsDirectories.add(line))
+        }
+        String modCoreVersionDemo = null;
+        try {
+            modCoreVersionDemo = new String(new java.net.URL("https://raw.githubusercontent.com/Zelaux/ZelauxModCore/master/versions/" + mindustryVersion + ".txt").openStream().readAllBytes());
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+        println "core: " + modCoreVersionDemo
+        modCoreVersion = modCoreVersionDemo
+        modCoreVersion = "64106163e37"
     }
     repositories {
         mavenLocal()
@@ -15,11 +31,11 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.github.Anuken.Mindustry:annotations:$mindustryVersionAnnotations"
+        classpath "com.github.Zelaux.ZelauxModCore:annotations:$modCoreVersion"
         classpath "com.github.Anuken.Mindustry:core:$mindustryVersion"
         classpath "com.github.Anuken.Mindustry:tools:$mindustryVersion"
         classpath "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-        classpath "com.github.Anuken.Arc:packer:$arcHash"
+        classpath "com.github.Anuken.Arc:packer:$packerHash"
     }
 }
 
@@ -57,7 +73,7 @@ allprojects {
         }
         writePlugins = {
             new File(rootDir, "annotations/src/main/resources/META-INF/services/").mkdirs()
-            def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/com.sun.source.util.Plugin")
+            def processoörFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/com.sun.source.util.Plugin")
             def text = new StringBuilder()
             def files = new File(rootDir, "annotations/src/main/java")
             files.eachFileRecurse(groovy.io.FileType.FILES) { file ->
@@ -110,6 +126,12 @@ ext {
         proc.waitForProcessOutput(System.out, System.err)
     }
 }
+
+dependencies {
+    implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
+    implementation "com.github.Zelaux.ZelauxModCore:plugins:$modCoreVersion"
+}
+
 configure(project(":annotations")) {
     tasks.withType(JavaCompile) {
         targetCompatibility = 8
@@ -176,7 +198,10 @@ project(":core") {
         compileOnly arcModule("extensions:fx")
         compileOnly arcModule("extensions:arcnet")
 //        compileOnly "com.github.Anuken.Mindustry:entities:$mindustryVersion"
-        compileOnly "com.github.Anuken.Mindustry:annotations:$mindustryVersionAnnotations"
+        implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
+        implementation "com.github.Zelaux.ZelauxModCore:plugins:$modCoreVersion"
+        compileOnly "com.github.Zelaux.ZelauxModCore:annotations:$modCoreVersion"
+
         compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
         compileOnly "com.github.Anuken.Mindustry:tools:$mindustryVersion"
         compileOnly "com.github.Zelaux:AdvancedContentInfo:$aciVersion"
@@ -225,12 +250,11 @@ project(":tools") {
         implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.22.1'
         implementation "com.github.Anuken.Mindustry:annotations:$mindustryVersionAnnotations"
         implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+
+        implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
+        implementation "com.github.Zelaux.ZelauxModCore:tools:$modCoreVersion"
+
         implementation "com.github.Anuken.Mindustry:tools:$mindustryVersion"
-//        implementation arcModule("natives:natives-desktop")
-//        implementation arcModule("natives:natives-desktop")
-//        implementation arcModule("natives:natives-freetype-desktop")
-//        implementation arcModule("backends:backend-headless")
-//        implementation arcModule("extensions:packer")
     }
 }
 project(":annotations") {
@@ -238,12 +262,12 @@ project(":annotations") {
     dependencies {
         implementation 'com.squareup:javapoet:1.12.1'
         implementation arcModule('arc-core')
-//        compileOnly project(":core")
-        implementation "com.github.Anuken.Mindustry:annotations:$mindustryVersionAnnotations"
         implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
         implementation "com.github.Anuken.Mindustry:tools:$mindustryVersion"
-//                if(name!="tools")compile  project(":tools")
-//        implementation  project(":core")
+
+        implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
+        implementation "com.github.Zelaux.ZelauxModCore:tools:$modCoreVersion"
+        implementation "com.github.Zelaux.ZelauxModCore:annotations:$modCoreVersion"
     }
 }
 
@@ -277,7 +301,7 @@ jar {
     dependsOn "core:jar"
     archiveFileName = "${project.archivesBaseName}Desktop.jar"
     from {
-          project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
+        project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
     }
 
     from(rootDir) {
@@ -317,21 +341,26 @@ task mjar() {
     dependsOn "jar"
     doFirst {
     }
-    doLast {
-        def intoPath = null
-        if ("classic".equals(modsDirectory)) {
-            intoPath = "${arc.util.OS.getAppDataDirectoryString("Mindustry")}/mods/"
-        } else if (modsDirectory!=null)intoPath=modsDirectory;
-        if (intoPath != null) {
-            delete{
+    ext{
+        move={String intoPath ->
+            delete {
                 delete "${intoPath}/${project.archivesBaseName}Desktop.jar"
             }
             copy {
                 from "$buildDir/libs/${project.archivesBaseName}Desktop.jar"
                 into intoPath
             }
-            def time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
-            System.out.println("\tlast build time: ${time}")
+            println "moved to "+intoPath
         }
+    }
+    doLast {
+        for (String directory:modsDirectories){
+            if (directory.equals("classic")){
+                directory="${arc.util.OS.getAppDataDirectoryString("Mindustry")}/mods/";
+            }
+            move(directory);
+        }
+        def time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+        System.out.println("\tlast build time: ${time}")
     }
 }

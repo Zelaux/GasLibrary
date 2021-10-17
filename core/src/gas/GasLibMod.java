@@ -3,29 +3,29 @@ package gas;
 import arc.Core;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
-import gas.annotations.GasAnnotations;
-import gas.core.GasContentLoader;
 import gas.gen.*;
 import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.ctype.UnlockableContent;
-import mindustry.mod.Mod;
+import mma.MMAMod;
+import mma.annotations.ModAnnotations;
+import mma.core.ModContentLoader;
 
 import static gas.GasVars.*;
 import static mindustry.Vars.*;
-@GasAnnotations.CashAnnotation2
-public class GasLibMod extends Mod {
+@ModAnnotations.DependenciesAnnotation
+public class GasLibMod extends MMAMod {
 
 
     public GasLibMod() {
         if (!GasDependencies.valid())return;
         GasEntityMapping.init();
-        gasLibInfo = Vars.mods.getMod(getClass());
+        GasVars.modInfo = Vars.mods.getMod(getClass());
     }
 
     public static TextureRegion getIcon() {
-        if (gasLibInfo == null || gasLibInfo.iconTexture == null) return Core.atlas.find("nomap");
-        return new TextureRegion(gasLibInfo.iconTexture);
+        if (GasVars.modInfo == null || GasVars.modInfo.iconTexture == null) return Core.atlas.find("nomap");
+        return new TextureRegion(GasVars.modInfo.iconTexture);
     }
 
     public static boolean inPackage(String packageName, Object obj) {
@@ -42,7 +42,7 @@ public class GasLibMod extends Mod {
     public void init() {
         if (!GasDependencies.valid())return;
         if (!loaded) return;
-        Seq<Content> all = Seq.with(content.getContentMap()).<Content>flatten().select(c -> c.minfo.mod == gasLibInfo).as();
+        Seq<Content> all = Seq.with(content.getContentMap()).<Content>flatten().select(c -> c.minfo.mod == GasVars.modInfo).as();
         for (Content c : all) {
             if (inPackage("gas", c)) {
                 if (c instanceof UnlockableContent) checkTranslate((UnlockableContent) c);
@@ -51,18 +51,18 @@ public class GasLibMod extends Mod {
     }
 
     public void loadContent() {
-        gasLibInfo = Vars.mods.getMod(this.getClass());
+        GasVars.modInfo = Vars.mods.getMod(this.getClass());
         if (!GasDependencies.valid()) {
-            if (gasLibInfo != null){
-                gasLibInfo.missingDependencies.addAll(gasLibInfo.dependencies.select(mod->!mod.enabled()).map(l->l.name));
+            if (GasVars.modInfo != null){
+                GasVars.modInfo.missingDependencies.addAll(GasVars.modInfo.dependencies.select(mod->!mod.enabled()).map(l->l.name));
             }
             return;
         }
-        if (gasLibInfo.dependencies.count(l->l.enabled()) != gasLibInfo.dependencies.size) {
+        if (GasVars.modInfo.dependencies.count(l->l.enabled()) != GasVars.modInfo.dependencies.size) {
             return;
         }
 
-        new GasContentLoader((load) -> {
+        new ModContentLoader((load) -> {
             load.load();
         });
         loaded = true;

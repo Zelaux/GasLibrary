@@ -1,23 +1,40 @@
 package gas;
 
-import arc.Core;
-import arc.util.Strings;
-import gas.GasLibMod;
-import mindustry.ctype.UnlockableContent;
-import mindustry.mod.Mods;
+import arc.struct.Seq;
+import arc.util.Log;
+import gas.content.GasBlocks;
+import mindustry.ctype.ContentList;
+import mma.ModVars;
 
-public class GasVars {
-    public static Mods.LoadedMod gasLibInfo;
-    public static boolean loaded = false;
-    public static boolean packSprites;
-    public static void checkTranslate(UnlockableContent content) {
-        content.localizedName = Core.bundle.get(content.getContentType() + "." + content.name + ".name", content.localizedName);
-        content.description = Core.bundle.get(content.getContentType() + "." + content.name + ".description", content.description);
-        content.details = Core.bundle.get(content.getContentType() + "." + content.name + ".details", content.details);
+public class GasVars extends ModVars {
+    static Seq<Runnable> onLoad = new Seq<>();
+static {
+    new GasVars();
+}
+    public static void create() {
+
     }
 
-    public static String fullName(String name) {
-        if (packSprites) return name;
-        return Strings.format("@-@", gasLibInfo == null ? "gas" : gasLibInfo.name, name);
+    @Override
+    protected void onLoad(Runnable runnable) {
+        onLoad.add(runnable);
+    }
+
+    @Override
+    protected void showException(Throwable ex) {
+        Log.err(ex);
+    }
+
+    @Override
+    public ContentList[] getContentList() {
+        return new ContentList[]{
+                new GasBlocks(),
+        };
+
+    }
+
+    @Override
+    public String getFullName(String name) {
+        return name;
     }
 }

@@ -1,5 +1,2 @@
 gas.annotations.analogues.AnaloguesProc
-gas.annotations.dependencies.DependenciesProc
 gas.annotations.entities.GasEntitiesProc
-gas.annotations.misc.GasLoadRegionProcessor
-gas.annotations.remote.GasRemoteProcess
