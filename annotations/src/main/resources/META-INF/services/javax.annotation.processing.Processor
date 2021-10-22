@@ -1,2 +1,1 @@
-gas.annotations.analogues.AnaloguesProc
-gas.annotations.entities.GasEntitiesProc
+gas.annotations.GasBaseProcessor

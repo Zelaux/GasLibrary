@@ -4,5 +4,4 @@ author: "Zelaux"
 description: "Java library for java mods"
 main: "gas.GasLibMod"
 version: 1.4
-minGameVersion: 132
-dependencies: ["advanced-content-info"]
+minGameVersion: 133

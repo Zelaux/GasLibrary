@@ -6,8 +6,9 @@ import gas.annotations.GasAnnotations;
 import gas.content.Gasses;
 import gas.type.Gas;
 import mindustry.io.TypeIO;
+import mma.annotations.ModAnnotations;
 
-@GasAnnotations.TypeIOHandler
+@ModAnnotations.TypeIOHandler
 public class GasTypeIO extends TypeIO {
     public static void writeGas(Writes writes, Gas gas) {
         writes.i(gas.id);

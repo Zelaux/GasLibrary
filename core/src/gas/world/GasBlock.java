@@ -4,6 +4,7 @@ import acontent.world.meta.*;
 import arc.*;
 import arc.func.*;
 import arc.graphics.*;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.*;
 import gas.annotations.*;
 import gas.annotations.GasAnnotations.*;
@@ -21,12 +22,14 @@ import mindustry.ui.*;
 import mindustry.world.*;
 import mindustry.world.consumers.*;
 import mindustry.world.meta.*;
+import mma.annotations.ModAnnotations;
 
 import static mindustry.Vars.tilesize;
 
 @GasAnnotations.GasAddition
 public class GasBlock extends Block{
-    @Load("noon")
+    @ModAnnotations.Load("noon")
+    public TextureRegion noon;
     public final GasConsumers consumes = new GasConsumers();
     /** If true, gasBuildings have a GasModule. */
     public boolean hasGasses = false;

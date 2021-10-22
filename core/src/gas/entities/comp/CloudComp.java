@@ -14,7 +14,6 @@ import arc.math.geom.Point2;
 import arc.math.geom.Rect;
 import arc.util.Time;
 import arc.util.Tmp;
-import gas.annotations.GasAnnotations;
 import gas.entities.bullets.GasBulletType;
 import gas.gen.Cloudc;
 import mindustry.Vars;
@@ -30,43 +29,41 @@ import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.Wall;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import mma.annotations.ModAnnotations;
 
 import static gas.entities.Clouds.maxGas;
 import static mindustry.Vars.world;
 import static mindustry.entities.Puddles.maxLiquid;
 
-@GasAnnotations.EntityDef(value = {Cloudc.class}, pooled = true)
-@GasAnnotations.Component(base = true)
+@ModAnnotations.EntityDef(value = {Cloudc.class}, pooled = true)
+@ModAnnotations.Component(base = true)
 public abstract class CloudComp implements Posc, Cloudc, Drawc {
     private static final Rect rect = new Rect(), rect2 = new Rect();
     private static int seeds;
 private static boolean hasWall;
 private static int blockCounter;
-    @GasAnnotations.Import
+    @ModAnnotations.Import
     int id;
-    @GasAnnotations.Import
+    @ModAnnotations.Import
     float x, y;
 
     transient float accepting, updateTime, lastRipple;
     float amount;
     int generation;
     Tile tile;
-    Gas gas;
+    Gas gasObject;
 
 
     public float getFlammability() {
-        return this.gas.flammability * this.amount;
+        return this.gasObject.flammability * this.amount;
     }
 
     @Override
-    @GasAnnotations.Replace
+    @ModAnnotations.Replace
     public void update() {
         float addSpeed = accepting > 0 ? 3f : 0f;
 
-        amount -= Time.delta * (1f - gas.viscosity) / (5f + addSpeed);
+        amount -= Time.delta * (1f - gasObject.viscosity) / (5f + addSpeed);
         amount += accepting;
         accepting = 0f;
 
@@ -77,7 +74,7 @@ private static int blockCounter;
                 Tile other = world.tile(tile.x + point.x, tile.y + point.y);
                 if(other != null && other.block() == Blocks.air){
                     targets ++;
-                    Clouds.deposit(other, tile, gas, deposited, false);
+                    Clouds.deposit(other, tile, gasObject, deposited, false);
                 }
             }
             amount -= deposited * targets;
@@ -94,16 +91,16 @@ private static int blockCounter;
                 if (unit.isGrounded() && !unit.hovering) {
                     unit.hitbox(rect2);
                     if (rect.overlaps(rect2)) {
-                        unit.apply(gas.effect, 60 * 2);
+                        unit.apply(gasObject.effect, 60 * 2);
 
                         if (unit.vel.len() > 0.1) {
-                            Fx.ripple.at(unit.x, unit.y, unit.type.rippleScale, gas.color);
+                            Fx.ripple.at(unit.x, unit.y, unit.type.rippleScale, gasObject.color);
                         }
                     }
                 }
             });
 
-            if (gas.temperature > 0.7f && (tile.build != null) && Mathf.chance(0.5)) {
+            if (gasObject.temperature > 0.7f && (tile.build != null) && Mathf.chance(0.5)) {
                 Fires.create(tile);
             }
 
@@ -112,16 +109,16 @@ private static int blockCounter;
 
         Puddle puddle = Puddles.get(tile);
         if (puddle != null) {
-            if (puddle.liquid.temperature >= 0.7f && gas.temperature>=0.7f){
+            if (puddle.liquid.temperature >= 0.7f && gasObject.temperature >= 0.7f){
                 Fires.create(tile);
                 if(Mathf.chance(0.006 * amount)){
                     Bullets.fireball.createNet(Team.derelict, x, y, Mathf.random(360f), -1f, 1f, 1f);
                 }
             }
-            if (puddle.liquid.temperature >= 0.7f && gas.explosiveness >= 0.9f ) {
+            if (puddle.liquid.temperature >= 0.7f && gasObject.explosiveness >= 0.9f ) {
                 float flammability, explosiveness, radius;
                 flammability = getFlammability() + puddle.getFlammability();
-                explosiveness = gas.explosiveness + puddle.liquid.explosiveness;
+                explosiveness = gasObject.explosiveness + puddle.liquid.explosiveness;
                 radius = (amount + puddle.amount) * 1.2f;
                 Vars.world.tiles.eachTile((tile) -> {
                     if (tile == null || tile.build == null) return;
@@ -154,9 +151,9 @@ private static int blockCounter;
             rect.setSize(Mathf.clamp(amount / (maxGas / 1.5f)) * 10.0F).setCenter(x, y);
             return Tmp.r1.overlaps(rect);
         });
-        if (bullet1 != null && bullet1.type instanceof GasBulletType && ((GasBulletType) bullet1.type).explodes(gas, amount)) {
+        if (bullet1 != null && bullet1.type instanceof GasBulletType && ((GasBulletType) bullet1.type).explodes(gasObject, amount)) {
             float flammability = getFlammability();
-            float explosiveness = gas.explosiveness;
+            float explosiveness = gasObject.explosiveness;
             float radius = Mathf.clamp((amount * 1.2f), 0, 30);
             Damage.dynamicExplosion(x, y, flammability, explosiveness, 0, radius, Vars.state.rules.damageExplosions, true, bullet1.team);
             amount = Math.max(0, amount - explosiveness - flammability - radius / 8f);
@@ -176,8 +173,8 @@ private static int blockCounter;
         Shader last = Draw.getShader();
 //        last
 //        Draw.shader(Shaders.PlanetShader);
-        Color col = Tmp.c1.set(this.gas.color).shiftValue(-0.05F);
-        a = (Mathf.clamp(this.amount / 250f) * gas.transparency) * 0.9f;
+        Color col = Tmp.c1.set(this.gasObject.color).shiftValue(-0.05F);
+        a = (Mathf.clamp(this.amount / 250f) * gasObject.transparency) * 0.9f;
         a = Math.max(0.1f, a);
         Draw.color(col);
 //        Draw.color(col,col.cpy().a(0),a);
@@ -190,15 +187,15 @@ private static int blockCounter;
         Draw.blend();
         Draw.color();
 //        Draw.reset();
-        if (this.gas.lightColor.a > 0.001F && f > 0.0F) {
-            Color color = this.gas.lightColor;
+        if (this.gasObject.lightColor.a > 0.001F && f > 0.0F) {
+            Color color = this.gasObject.lightColor;
             float opacity = color.a * f;
             Drawf.light(Team.derelict, this.tile.drawx(), this.tile.drawy(), 30.0F * f, color, opacity * 0.8F);
         }
 
     }
 
-    @GasAnnotations.Replace
+    @ModAnnotations.Replace
     public float clipSize() {
         return 20;
     }

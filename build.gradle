@@ -1,10 +1,10 @@
 buildscript {
     ext {
-        arcHash = "v132" as Object
+        arcHash = "v133"
         packerHash = '128'
-        mindustryVersion = "v132"
+        mindustryVersion = "v133"
         mindustryVersionAnnotations = "v126.2"
-        aciVersion = "v1.3"
+        aciVersion = "9f9ed7da24"
         modsDirectories = [];
         def file = new File(rootDir, "modsDirectoies.txt");
 //        println "abs->"+file.getAbsolutePath();
@@ -20,7 +20,7 @@ buildscript {
         }
         println "core: " + modCoreVersionDemo
         modCoreVersion = modCoreVersionDemo
-        modCoreVersion = "64106163e37"
+//        modCoreVersion = "64106163e37"
     }
     repositories {
         mavenLocal()
@@ -38,83 +38,11 @@ buildscript {
         classpath "com.github.Anuken.Arc:packer:$packerHash"
     }
 }
-
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.4.32'
-    id "org.jetbrains.kotlin.kapt" version "1.4.32"
-    id 'groovy'
+    id 'org.jetbrains.kotlin.jvm' version '1.5.31'
+    id "org.jetbrains.kotlin.kapt" version "1.5.31"
+//    id 'groovy'
 }
-version '1.0'
-allprojects {
-
-    apply plugin: 'groovy'
-
-//    version = 'release'
-    group = 'com.github.Zelaux'
-
-    ext {
-        arcModule = { String name ->
-            //skip to last submodule
-            if (name.contains(':')) name = name.split(':').last()
-            return "com.github.Anuken.Arc:$name:$arcHash"
-        }
-        writeProcessors = {
-            new File(rootDir, "annotations/src/main/resources/META-INF/services/").mkdirs()
-            def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/javax.annotation.processing.Processor")
-            def text = new StringBuilder()
-            def files = new File(rootDir, "annotations/src/main/java")
-            files.eachFileRecurse(groovy.io.FileType.FILES) { file ->
-                if (file.name.endsWith(".java") && (file.text.contains(" extends GasBaseProcessor") || (file.text.contains(" extends AbstractProcessor") && !file.text.contains("abstract class")))) {
-                    text.append(file.path.substring(files.path.length() + 1)).append("\n")
-                }
-            }
-
-            processorFile.text = text.toString().replace(".java", "").replace("/", ".").replace("\\", ".")
-        }
-        writePlugins = {
-            new File(rootDir, "annotations/src/main/resources/META-INF/services/").mkdirs()
-            def processoörFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/com.sun.source.util.Plugin")
-            def text = new StringBuilder()
-            def files = new File(rootDir, "annotations/src/main/java")
-            files.eachFileRecurse(groovy.io.FileType.FILES) { file ->
-                if (file.name.endsWith(".java") && (file.text.contains(" implements Plugin"))) {
-                    text.append(file.path.substring(files.path.length() + 1)).append("\n")
-                }
-            }
-
-            processorFile.text = text.toString().replace(".java", "").replace("/", ".").replace("\\", ".")
-        }
-    }
-    apply plugin: 'maven-publish'
-    repositories {
-        mavenLocal()
-        google()
-        mavenCentral()
-        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-        maven { url 'https://jitpack.io' }
-    }
-
-    task clearCache {
-        doFirst {
-            delete {
-                delete "$rootDir/core/assets/cache"
-            }
-        }
-    }
-    tasks.withType(JavaCompile) {
-        targetCompatibility = 8
-        sourceCompatibility = JavaVersion.VERSION_16
-        options.encoding = "UTF-8"
-        options.compilerArgs += ["-Xlint:deprecation"]
-
-        options.forkOptions.jvmArgs.addAll([
-                '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-                '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
-        ])
-    }
-}
-//needed for android build
 ext {
     //the build number that this mod is made for
     //version of SDK you will be using
@@ -127,9 +55,65 @@ ext {
     }
 }
 
+version '1.0'
+allprojects {
+    apply plugin: 'maven-publish'
+
+//    version = 'release'
+    group = 'com.github.Zelaux'
+    ext {
+        arcModule = { String name ->
+            //skip to last submodule
+            if (name.contains(':')) name = name.split(':').last()
+            return "com.github.Anuken.Arc:$name:$arcHash"
+        }
+        writeProcessors = {
+            new File(rootDir, "annotations/src/main/resources/META-INF/services/").mkdirs()
+            def processorFile = new File(rootDir, "annotations/src/main/resources/META-INF/services/javax.annotation.processing.Processor")
+            def text = new StringBuilder()
+            def files = new File(rootDir, "annotations/src/main/java")
+            files.eachFileRecurse(
+                    groovy.io.FileType.FILES
+            ) { file ->
+                if (file.name.endsWith(".java") && (file.text.contains(" extends ModBaseProcessor") || (file.text.contains(" extends AbstractProcessor") && !file.text.contains("abstract class")))) {
+                    text.append(file.path.substring(files.path.length() + 1)).append("\n")
+                }
+            }
+
+            processorFile.text = text.toString().replace(".java", "").replace("/", ".").replace("\\", ".")
+        }
+    }
+    repositories {
+        mavenLocal()
+        google()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url 'https://jitpack.io' }
+    }
+    tasks.withType(JavaCompile) {
+        targetCompatibility = 8
+        sourceCompatibility = JavaVersion.VERSION_16
+        options.encoding = "UTF-8"
+        options.compilerArgs += ["-Xlint:deprecation"]
+
+        options.forkOptions.jvmArgs.addAll([
+                '--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
+                '--add-opens=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+                '--add-opens=java.base/sun.reflect.annotation=ALL-UNNAMED'
+        ])
+    }
+}
+
 dependencies {
     implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
     implementation "com.github.Zelaux.ZelauxModCore:plugins:$modCoreVersion"
+    implementation "com.github.Zelaux:AdvancedContentInfo:$aciVersion"
 }
 
 configure(project(":annotations")) {
@@ -168,7 +152,6 @@ project(":core") {
     task preGen {
         outputs.upToDateWhen { false }
         writeProcessors()
-        writePlugins()
     }
     task copyChangelog {
     }

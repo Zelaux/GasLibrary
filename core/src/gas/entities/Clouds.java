@@ -41,20 +41,20 @@ public class Clouds {
         if(p == null){
             Cloud cloud = Cloud.create();
             cloud.tile = tile;
-            cloud.gas = gas;
+            cloud.gasObject = gas;
             cloud.amount = amount;
             cloud.set((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f);
             cloud.add();
             map.put(tile.pos(), cloud);
-        }else if(p.gas == gas){
+        }else if(p.gasObject == gas){
             p.accepting = Math.max(amount, p.accepting);
 
             if(initial && p.lastRipple <= Time.time - 40f && p.amount >= maxGas / 2f){
-                Fx.ripple.at((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f, 1f, p.gas.color);
+                Fx.ripple.at((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f, 1f, p.gasObject.color);
                 p.lastRipple = Time.time;
             }
         }else{
-            p.amount += reactCloud(p.gas, gas, amount, p.tile, (p.x + source.worldx()) / 2f, (p.y + source.worldy()) / 2f);
+            p.amount += reactCloud(p.gasObject, gas, amount, p.tile, (p.x + source.worldx()) / 2f, (p.y + source.worldy()) / 2f);
         }
     }
 
