@@ -1,2 +1,2 @@
-sourceSets.main.java.srcDirs = ["src/", "$buildDir/generated/sources/annotationProcessor/java/main"]
+sourceSets.main.java.srcDirs = ["src/", "$buildDir/generated/sources/annotationProcessor/java/main","generated/"]
 sourceSets.main.resources.srcDirs = ["resources/"]

@@ -16,7 +16,7 @@ import com.github.javaparser.resolution.*;
 import com.github.javaparser.resolution.declarations.*;
 import com.github.javaparser.resolution.types.*;
 
-import static gas.tools.CreatingGasBlocks.javaParser;
+import static gas.tools.updateVersion.CreatingGasBlocks.javaParser;
 
 public class MethodsFixer extends ModifierVisitor<Void>{
     MethodDeclaration currentMethod;

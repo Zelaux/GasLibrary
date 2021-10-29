@@ -15,34 +15,45 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.*;
 import com.github.javaparser.ast.visitor.*;
 import com.github.javaparser.resolution.declarations.*;
+import gas.tools.parsers.visitors.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
-import static gas.tools.CreatingGasBlocks.javaParser;
+import static gas.tools.updateVersion.CreatingGasBlocks.javaParser;
 
 public class GasBlocksConverter{
     static boolean moreLogs = false;
     public final ObjectMap<String, CompilationUnit> classMap = new ObjectMap<>(), existsClasses = new ObjectMap<>();
     public final NameTransform transform;
     final ObjectSet<CompilationUnit> created = new ObjectSet<>();
-    public ObjectSet<ImportDeclaration> extraImport = new ObjectSet<>();
+    private final ObjectSet<String> skippedClasses = new ObjectSet<>();
     public CompilationUnit gasBuilding, gasBlock;
+    public boolean logSkipped;
     //    static Seq<ImportDeclaration> packagesToImport = new Seq<>();
-    Fi blockDir, root, coreDir;
+    Fi
+    /**core/generated/gas/blocks*/
+    blockDir,
+    /** mindustry */
+    root,
+    /** core/generated */
+    coreDir,
+    /** core/src */
+    mainDir,
+    mainBlockDir;
 
     public GasBlocksConverter(NameTransform transform){
-//        this.classMap = classMap;
-//        this.existsClasses = existsClasses;
         this.transform = transform;
-//        transform = new NameTransform(transformNames, transformFields, mindustryAnnotations);
     }
 
     private void setupFiles(){
         Fi sourcesFi = new Fi("compDownloader").child("sources.zip");
-        coreDir = Fi.get("core/src");
-        Fi dir = coreDir.child("gas/world");
-        blockDir = dir.child("blocks");
+        coreDir = Fi.get("core/generated");
+        mainDir = Fi.get("core/src");
+        blockDir = coreDir.child("gas/world").child("blocks");
         blockDir.mkdirs();
+        mainBlockDir = mainDir.child("gas/world").child("blocks");
+        mainBlockDir.mkdirs();
         ZipFi sourceZip = new ZipFi(sourcesFi);
         root = sourceZip.list()[0];
     }
@@ -51,31 +62,88 @@ public class GasBlocksConverter{
         if(coreDir == null || blockDir == null || root == null){
             setupFiles();
         }
+        if(false){
+            for(CompilationUnit compilationUnit : classMap.values()){
+
+                for(NameExpr nameExpr : compilationUnit.findAll(NameExpr.class)){
+                    Log.info("@", nameExpr);
+                    try{
+                        ResolvedValueDeclaration resolve = nameExpr.resolve();
+                        Log.info("--resolved: @", resolve);
+                    }catch(Exception e){
+                        Log.info("--Cannot resolve");
+                    }
+                }
+                Log.info("package @", compilationUnit.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("<none>"));
+            }
+            return;
+        }
+        ImportProcessor.reset();
         for(Entry<String, CompilationUnit> entry : classMap){
 //            ClassEntry classEntry = entry.value;
             CompilationUnit compilationUnit = entry.value;
             if(entry.key.contains("mindustry.world")){
-                compilationUnitPackageImport(compilationUnit);
-                compilationUnitPackageImport(compilationUnit, s -> s.replace("mindustry", "gas"));
+                ImportProcessor.compilationUnitPackageImport(compilationUnit);
+                ImportProcessor.compilationUnitPackageImport(compilationUnit, s -> s.replace("mindustry", "gas"));
             }
 //            handleBlock(entry.key,/* classEntry.fi,*/ compilationUnit);
         }
 
+        skippedClasses.clear();
         for(Entry<String, CompilationUnit> entry : classMap){
             String[] keys = entry.key.split("\\.");
-            handleClass(keys[keys.length - 1],/* classEntry.fi,*/ entry.value);
+            transformClass(keys[keys.length - 1],/* classEntry.fi,*/ entry.value);
+        }
+        if(logSkipped){
+            for(String skippedClass : skippedClasses){
+                Log.info("skipped: @", skippedClass);
+            }
         }
         Seq<ClassOrInterfaceType> seq = new Seq<>();
         Seq<CompilationUnit> sort = created.asArray().sort((a, b) -> {
             ClassOrInterfaceDeclaration aClass = a.findFirst(ClassOrInterfaceDeclaration.class).get();
             ClassOrInterfaceDeclaration bClass = b.findFirst(ClassOrInterfaceDeclaration.class).get();
-            seq.addAll(aClass.getExtendedTypes());
-            boolean first = !aClass.isInterface() && seq.contains(type -> type.toDescriptor().equals(bClass.getFullyQualifiedName().orElse(null)));
-            seq.clear();
-            seq.addAll(bClass.getExtendedTypes());
-            boolean second = !bClass.isInterface() && seq.contains(type -> type.toDescriptor().equals(aClass.getFullyQualifiedName().orElse(null)));
-            seq.clear();
-            return Boolean.compare(first, second);
+            try{
+                Func2<ClassOrInterfaceType, ClassOrInterfaceDeclaration, String> descriptor = (classType, declaration) -> {
+                    try{
+                        return classType.toDescriptor();
+                    }catch(Exception e){
+
+                        String packageName = declaration.findCompilationUnit()
+                        .flatMap(CompilationUnit::getPackageDeclaration)
+                        .map(NodeWithName::getNameAsString).orElse(null);
+                        String className = classType.getNameAsString();
+                        CompilationUnit unit = getCompilationUnit(packageName, className);
+                        if(unit == null){
+                            unit = created.asArray().find(c -> {
+//                                boolean samePackage = c.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("").equals(packageName);
+                                return c.getClassByName(className).isPresent();
+                            });
+                        }
+                        if(unit != null){
+                            return unit.getClassByName(className).get().getFullyQualifiedName().get();
+                        }
+                        throw new RuntimeException(e);
+                    }
+                };
+
+                seq.addAll(aClass.getExtendedTypes());
+                boolean first =
+                !aClass.isInterface() &&
+                seq.contains(type -> descriptor.get(type, aClass).equals(bClass.getFullyQualifiedName().orElse(null)));
+                seq.clear();
+
+                seq.addAll(bClass.getExtendedTypes());
+                boolean second = !bClass.isInterface() &&
+                seq.contains(type -> descriptor.get(type, bClass).equals(aClass.getFullyQualifiedName().orElse(null)));
+                seq.clear();
+                return Boolean.compare(first, second);
+            }catch(Exception exception){
+                String apackage = a.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("<none>");
+                String bpackage = b.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("<none>");
+                Log.info("(@.@;@.@)", apackage, aClass.getNameAsString(), bpackage, bClass.getNameAsString());
+                throw exception;
+            }
         });
 
         //post processing
@@ -85,17 +153,20 @@ public class GasBlocksConverter{
     }
 
     private void postProcessing(CompilationUnit compilationUnit){
+        if(compilationUnit.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("").startsWith("gas.world.draw")){
+            return;
+        }
         ClassOrInterfaceDeclaration firstClass = compilationUnit.findFirst(ClassOrInterfaceDeclaration.class).get();
         String className = firstClass.getNameAsString();
         Log.info("postProcessing: @", firstClass.getFullyQualifiedName().orElse(className));
-        compilationUnit.accept(new MethodsFixer(this), null);
+//        compilationUnit.accept(new MethodsFixer(this), null);
         compilationUnit.accept(new ModifierVisitor<Void>(){
             boolean returnSwitch = false;
 
             @Override
             public Visitable visit(MethodCallExpr method, Void arg){
 //                super.visit(method, arg);
-                if (true)return super.visit(method, arg);
+                if(true) return super.visit(method, arg);
                 Expression scope = method.getScope().orElse(null);
                 if(scope == null || scope.isSuperExpr()){
                     return super.visit(method, arg);
@@ -130,54 +201,45 @@ public class GasBlocksConverter{
         saveCompilationUnitAndAddCreated(compilationUnit, compilationUnit.getPackageDeclaration().get().getNameAsString(), className);
     }
 
-    public void compilationUnitPackageImport(CompilationUnit compilationUnit){
-        compilationUnitPackageImport(compilationUnit, s -> s);
-    }
 
-    public void compilationUnitPackageImport(CompilationUnit compilationUnit, Func<String, String> transformer){
-        if(compilationUnit.getPackageDeclaration().isPresent()){
-            PackageDeclaration aPackage = compilationUnit.getPackageDeclaration().get();
-            extraImport.add(new ImportDeclaration(transformer.get(aPackage.getNameAsString()), false, true));
-        }
-    }
-
-    private void handleClass(String className, CompilationUnit parent){
+    private void transformClass(String className, CompilationUnit parent){
 //        className=className.substring(!className.contains(".")?0:className.lastIndexOf(".")+1);
         String prevPackage = parent.getPackageDeclaration().get().getNameAsString();
-        boolean inBlocksDir = prevPackage.contains("world.blocks");
-        boolean inDrawDir = prevPackage.contains("world.draw");
-        if(!transform.names.contains(className) || !(inBlocksDir || inDrawDir)){
-            Log.info("skipped: @(@)", className, prevPackage);
+        ClassInfo classInfo = new ClassInfo(prevPackage, className);
+
+        String gasBlockName = transform.type(className) + ".java";
+        boolean exists =  exists(gasBlockName);
+        boolean inBlackList = false;
+        if(!transform.names.contains(className) || (inBlackList = BlockConverterSettings.inBlackList(classInfo)) || exists){
+            String fullName = prevPackage + "." + className;
+            skippedClasses.add(fullName);
+            if(exists){
+                Log.info("exists(@)", fullName);
+            }
             return;
         }
         CompilationUnit compilationUnit = parent.clone();
-        NodeList<ImportDeclaration> imports = compilationUnit.getImports();
+        ImportProcessor.process(classInfo, this, compilationUnit.getImports());
+
         String aPackage = prevPackage.replace("mindustry.", "gas.");
         Log.info("[@]", className);
         compilationUnit.setPackageDeclaration(aPackage);
 
-        for(ImportDeclaration anImport : imports.toArray(new ImportDeclaration[0])){
-            String importName = anImport.getNameAsString();
-            ;
-//            if(Structs.contains(strings))
-//            if(importName.contains("gas.entities.units") || importName.contains("gas.game") || importName.contains("gas.graphics") || true) continue;
-            ImportDeclaration importDeclaration = new ImportDeclaration(importName
-            .replace("mindustry", "gas")
-            .replace("Annotations", "GasAnnotations")
-            , anImport.isStatic(), anImport.isAsterisk());
-            if(existsClasses.keys().toSeq().contains(key -> key.startsWith(importDeclaration.getNameAsString()))){
-                imports.add(importDeclaration);
-            }
-        }
-        for(ImportDeclaration extra : extraImport){
-            imports.add(extra.clone());
-        }
-//        imports.remove("import gas.entities.units.*;");
-        imports.add(new ImportDeclaration(prevPackage, false, true));
-        String gasBlockName = transform.type(className) + ".java";
+
 //        Log.info("types");
+//transfromning class names, super types and constructors
+        for(ClassOrInterfaceDeclaration declaration : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)){
+            declaration.setName(transform.type(declaration.getNameAsString()));
+            for(int i = 0; i < declaration.getExtendedTypes().size(); i++){
 
-
+                declaration.getExtendedTypes(i).accept(new TypeTransformVisitor<>(transform),null);
+//                declaration.setExtendedType(i,new ClassOrInterfaceType())
+            }
+            for(ConstructorDeclaration constructor : declaration.getConstructors()){
+                constructor.setName(declaration.getNameAsString());
+            }
+            SmartTypeReplacer.handle(declaration,transform);
+        }
         compilationUnit.accept(new ModifierVisitor<Void>(){
             boolean returnSwitch = false;
 
@@ -191,6 +253,7 @@ public class GasBlocksConverter{
                 }
                 return visit;
             }
+
             @Override
             public Visitable visit(ClassOrInterfaceDeclaration declaration, Void arg){
 //                boolean extra= declaration.getExtendedTypes().toString().contains("mindustry");
@@ -213,7 +276,8 @@ public class GasBlocksConverter{
             @Override
             public Visitable visit(SimpleName simpleName, Void arg){
                 String type = transform.type(simpleName.getIdentifier());
-                simpleName.setIdentifier(type);
+                //TODO commented transformation
+//                simpleName.setIdentifier(type);
                 return super.visit(simpleName, arg);
             }
 
@@ -237,7 +301,7 @@ public class GasBlocksConverter{
                         VariableDeclarator var = (VariableDeclarator)node;
                         if(var.getParentNode().orElse(null) instanceof VariableDeclarationExpr){
                             if(!var.getType().isPrimitiveType()){
-                                var.setType(new VarType());
+//                                var.setType(new VarType());
                             }
                         }
                     }
@@ -332,9 +396,10 @@ public class GasBlocksConverter{
             for(VariableDeclarator variable : parentField.getVariables()){
                 String fieldName = variable.getNameAsString();
                 for(AnnotationExpr annotation : parentField.getAnnotations()){
-                    annotation.setName(transform.annotation(annotation.getNameAsString()));
+//                    annotation.setName(transform.annotation(annotation.getNameAsString()));
                 }
-                if(transform.fields.contains(fieldName)){
+                //TODO commented transform
+                if(transform.fields.contains(fieldName) && false){
                     FieldDeclaration declaration = new FieldDeclaration(parentField.getModifiers(),
                     new VariableDeclarator(variable.getType(), transform.field(fieldName))
                     );
@@ -357,15 +422,34 @@ public class GasBlocksConverter{
             }
         }
         for(AnnotationExpr annotationExpr : compilationUnit.findAll(AnnotationExpr.class)){
-            annotationExpr.setName(transform.annotation(annotationExpr.getNameAsString()));
+//            annotationExpr.setName(transform.annotation(annotationExpr.getNameAsString()));
         }
         boolean liquid = false;
         if(compilationUnit.getPackageDeclaration().get().getNameAsString().contains("gas.world.blocks.liquid")){
             liquid = true;
-            fromLiquidBlock(gasBlockName, /*file,*/ compilationUnit.clone());
+            String newName = gasBlockName.replace("Liquid", "Gas");
+            if (!newName.contains("GasGasBlock")){
+                newName=newName.replace("GasGas","Gas");
+            }
+            if (exists(newName)){
+                Log.info("gasBlockExists(@.@)",classInfo.packageName(),newName);
+            }else{
+//                Log.info("canMake: @.@",classInfo.packageName(),newName);
+                fromLiquidBlock(gasBlockName, /*file,*/ compilationUnit.clone());
+            }
         }
         if(!liquid || gasBlockName.contains("Liquid")) saveCompilationUnitAndAddCreated(compilationUnit, aPackage, gasBlockName);
 //        blockDir.child(gasBlockName).writeString(compilationUnit.toString());
+    }
+
+    private boolean exists(String gasBlockName){
+        boolean[] exists = {false};
+        mainBlockDir.walk(fi -> {
+            if(fi.name().equals(gasBlockName)){
+                exists[0] = true;
+            }
+        });
+        return exists[0];
     }
 
     private void saveCompilationUnitAndAddCreated(CompilationUnit aClass, String aPackage, String className){
@@ -373,8 +457,25 @@ public class GasBlocksConverter{
         saveCompilationUnit(aClass, aPackage, className);
     }
 
+    private @Nullable
+    CompilationUnit getCompilationUnit(String aPackage, String className){
+        Fi file = classFile(aPackage, className);
+        CompilationUnit result = null;
+        if(file.exists()){
+            ParseResult<CompilationUnit> parse = javaParser.parse(file.readString());
+            if(parse.getResult().isPresent()){
+                result = parse.getResult().get();
+            }
+        }
+        return result;
+    }
+
+    private Fi classFile(String aPackage, String className){
+        return coreDir.child(aPackage.replace(".", "/") + "/" + (className.contains(".") ? className : className + ".java"));
+    }
+
     private void saveCompilationUnit(CompilationUnit aClass, String aPackage, String className){
-        coreDir.child(aPackage.replace(".", "/") + "/" + (className.contains(".") ? className : className + ".java")).writeString(aClass.toString());
+        classFile(aPackage, className).writeString(aClass.toString());
     }
 
     private void fromLiquidBlock(String name, /*Fi file,*/ CompilationUnit compilationUnit){

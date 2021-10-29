@@ -1,5 +1,7 @@
 sourceSets.main.java.srcDirs = ["src/"]
 
+sourceSets.main.java.srcDirs = ["src/"]
+
 
 import arc.files.Fi
 import arc.graphics.Color
@@ -12,7 +14,7 @@ import arc.util.async.Threads
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-
+def imagePackerPath="gas.tools.GasImagePacker"
 def genFolder = "../core/assets-raw/sprites_out/generated/"
 def doAntialias = !project.hasProperty("disableAntialias")
 def colorMap = new IntMap<List<Color>>(), colorIndexMap = new IntIntMap()
@@ -145,7 +147,7 @@ task pack(dependsOn: [classes, configurations.runtimeClasspath]) {
         javaexec {
             maxHeapSize = "4048m"
             args("-Xmx4048m")
-            main = "gas.tools.ModImagePacker"
+            main = imagePackerPath
             classpath = sourceSets.main.runtimeClasspath
             workingDir = genFolder
 //            jvmArgs ("-Xmx2024m")
@@ -167,20 +169,15 @@ task pack(dependsOn: [classes, configurations.runtimeClasspath]) {
         long ms = System.currentTimeMillis()
 
         //antialias everything except UI elements
-        fileTree(dir: new File(rootDir, 'core/assets-raw/sprites_out/').absolutePath, include: "**/*.png").visit { file ->
-            if (file.isDirectory() || (file.toString().replace("\\", "/").contains("/ui/") && file.toString().startsWith("icon-")) || file.toString().contains(".9.png")) return
+        fileTree(dir: new File(rootDir, 'core/assets-raw/sprites_out/').absolutePath, include: "**/*.png").visit{ file ->
+            if(file.isDirectory() || (file.toString().replace("\\", "/").contains("/ui/") && file.toString().startsWith("icon-")) || file.toString().contains(".9.png")) return
 
-            executor.submit {
+            executor.submit{
                 antialias(file.file)
             }
         }
 
-        executor.shutdown()
-        try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
-        } catch (InterruptedException e) {
-            e.printStackTrace()
-        }
+        Threads.await(executor)
 
         println "Time taken for AA: ${(System.currentTimeMillis() - ms) / 1000f}"
         println "Copy sprites start"
@@ -209,7 +206,7 @@ task badPack(dependsOn: [classes, configurations.runtimeClasspath]) {
         }
         copy {
             from "../core/assets/sprites-override/"
-            into "../core/assets-raw/sprites_out/"
+            into "../core/assets-raw/sprites_out"
         }
 
         //run generation task; generate all needed sprites
@@ -217,7 +214,7 @@ task badPack(dependsOn: [classes, configurations.runtimeClasspath]) {
         javaexec {
             maxHeapSize = "4048m"
             args("-Xmx4048m")
-            main = "gas.tools.ModImagePacker"
+            main = imagePackerPath
             classpath = sourceSets.main.runtimeClasspath
             workingDir = genFolder
 //            jvmArgs ("-Xmx2024m")
@@ -249,61 +246,16 @@ task badPack(dependsOn: [classes, configurations.runtimeClasspath]) {
 task genSprites(dependsOn: classes, type: JavaExec) {
 //    finalizedBy 'antialiasGen'
 
-    main = "gas.tools.ModImagePacker"
+    main = imagePackerPath
     classpath = sourceSets.main.runtimeClasspath
     jvmArgs("-Djava.awt.headless=true")
     standardInput = System.in
     workingDir = genFolder
 }
-task downloadCompDead (type: JavaExec) {
-    doFirst {
-        javaexec {
-            maxHeapSize = "4048m"
-            args("-Xmx4048m", "--enable-preview", mindustryVersion)
-            main = "gas.tools.AnukeCompDownloader"
-            classpath = sourceSets.main.runtimeClasspath
-            workingDir = "../"
-//            jvmArgs ("-Xmx2024m")
-//            systemProperties("-Xmx2024m")
-        }
-    }
-}
-task downloadComp (dependsOn: [classes, configurations.runtimeClasspath]) {
-    doFirst {
-        javaexec {
-            maxHeapSize = "4048m"
-            args("-Xmx4048m", "--enable-preview", mindustryVersion)
-            main = "gas.tools.AnukeCompDownloader"
-            classpath = sourceSets.main.runtimeClasspath
-            workingDir = "../"
-//            jvmArgs ("-Xmx2024m")
-//            systemProperties("-Xmx2024m")
-        }
-    }
-}
-task makeBlocksDead (type: JavaExec) {
-    doFirst {
-        javaexec {
-            maxHeapSize = "4048m"
-            args("-Xmx4048m", "--enable-preview", mindustryVersion)
-            main = "gas.tools.CreatingGasBlocks"
-            classpath = sourceSets.main.runtimeClasspath
-            workingDir = "../"
-//            jvmArgs ("-Xmx2024m")
-//            systemProperties("-Xmx2024m")
-        }
-    }
-}
-task makeBlocks (dependsOn: [classes, configurations.runtimeClasspath]) {
-    doFirst {
-        javaexec {
-            maxHeapSize = "4048m"
-            args("-Xmx4048m", "--enable-preview", mindustryVersion)
-            main = "gas.tools.CreatingGasBlocks"
-            classpath = sourceSets.main.runtimeClasspath
-            workingDir = "../"
-//            jvmArgs ("-Xmx2024m")
-//            systemProperties("-Xmx2024m")
-        }
-    }
+task updateMindustryVersion (dependsOn: [classes, configurations.runtimeClasspath], type: JavaExec) {
+    maxHeapSize = "4048m"
+    args("-Xmx4048m", "--enable-preview", mindustryVersion)
+    main = "gas.tools.updateVersion.GasVersionUpdater"
+    classpath = sourceSets.main.runtimeClasspath
+    workingDir = "../"
 }

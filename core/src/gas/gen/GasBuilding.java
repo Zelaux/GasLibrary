@@ -317,8 +317,11 @@ public class GasBuilding extends Building {
         initialized = true;
         return this;
     }
+    public void dumpGas(Gas gas){
+        dumpGas(gas,2f);
+    }
 
-    public void dumpGas(Gas gas) {
+    public void dumpGas(Gas gas, float scaling) {
         int dump = cdump;
         if (gasses.get(gas) > 1.0E-4F) {
             if (!Vars.net.client() && Vars.state.isCampaign() && team == Vars.state.rules.defaultTeam) {
@@ -335,7 +338,7 @@ public class GasBuilding extends Building {
                     float ofract = other.gasses.get(gas) / other.block.gasCapacity;
                     float fract = gasses.get(gas) / block.gasCapacity;
                     if (ofract < fract) {
-                        transferGas(other, (fract - ofract) * block.gasCapacity / 2.0F, gas);
+                        transferGas(other, (fract - ofract) * block.gasCapacity / scaling, gas);
                     }
                 }
             }

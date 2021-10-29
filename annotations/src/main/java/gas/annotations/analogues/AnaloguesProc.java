@@ -4,17 +4,17 @@ import arc.files.Fi;
 import arc.struct.Seq;
 import arc.util.Log;
 import gas.annotations.GasAnnotations;
-import gas.annotations.GasBaseProcessor;
 import mindustry.annotations.util.Selement;
 import mindustry.annotations.util.Smethod;
 import mindustry.annotations.util.Stype;
+import mma.annotations.*;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
 
 @SupportedAnnotationTypes("gas.annotations.GasAnnotations.GasAddition")
-public class AnaloguesProc extends GasBaseProcessor {
+public class AnaloguesProc extends ModBaseProcessor{
     @Override
     public void process(RoundEnvironment env) throws Exception {
         Seq<Selement> elements = elements(GasAnnotations.GasAddition.class);

@@ -1,0 +1,16 @@
+[GasItemBridge][GasItemBridgeBuild][canDumpLiquid].
+[GasItemBridge][GasItemBridgeBuild][canDumpLiquid]Parameter[liquid].
+[GasItemBridge][GasItemBridgeBuild][canDumpLiquid]Parameter[liquid]ClassOrInterfaceType[Liquid].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]BlockStmtReturnStmtBinaryExprBinaryExprBinaryExprNameExpr[hasLiquids].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]BlockStmtReturnStmtBinaryExprBinaryExprEnclosedExprBinaryExprBinaryExprMethodCallExpr[current]NameExpr[liquids].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]BlockStmtReturnStmtBinaryExprBinaryExprEnclosedExprBinaryExprBinaryExprNameExpr[liquid].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]BlockStmtReturnStmtBinaryExprBinaryExprEnclosedExprBinaryExprBinaryExprMethodCallExpr[get]MethodCallExpr[current]NameExpr[liquids].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]BlockStmtReturnStmtBinaryExprBinaryExprEnclosedExprBinaryExprBinaryExprMethodCallExpr[get]NameExpr[liquids].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]Parameter[liquid].
+[GasItemBridge][GasItemBridgeBuild][acceptLiquid]Parameter[liquid]ClassOrInterfaceType[Liquid].
+[GasBridge]ConstructorDeclaration[GasBridge]BlockStmtExpressionStmtAssignExprFieldAccessExpr[liquids].
+[GasConduit][GasConduitBuild][drawAt]BlockStmtExpressionStmtMethodCallExpr[liquid].
+[GasGasBlock]ConstructorDeclaration[GasGasBlock]BlockStmtExpressionStmtAssignExprFieldAccessExpr[liquids].
+[GasGasBlock][GasBuild][draw]BlockStmtIfStmtBlockStmtExpressionStmtMethodCallExpr[liquid].
+[GasVoid]ConstructorDeclaration[GasVoid]BlockStmtExpressionStmtAssignExprFieldAccessExpr[liquids].
