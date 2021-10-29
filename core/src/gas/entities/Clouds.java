@@ -50,7 +50,7 @@ public class Clouds {
             p.accepting = Math.max(amount, p.accepting);
 
             if(initial && p.lastRipple <= Time.time - 40f && p.amount >= maxGas / 2f){
-                Fx.ripple.at((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f, 1f, p.gasObject.color);
+//                Fx.ripple.at((tile.worldx() + source.worldx()) / 2f, (tile.worldy() + source.worldy()) / 2f, 1f, p.gasObject.color);
                 p.lastRipple = Time.time;
             }
         }else{

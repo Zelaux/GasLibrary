@@ -3,7 +3,7 @@ buildscript {
         arcHash = "v133"
         packerHash = '128'
         mindustryVersion = "v133"
-        aciVersion = "daea5433ca3"
+        aciVersion = "9f9ed7da24"
         modsDirectories = [];
         def file = new File(rootDir, "modsDirectoies.txt");
 //        println "abs->"+file.getAbsolutePath();

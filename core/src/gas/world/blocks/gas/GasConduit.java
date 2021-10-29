@@ -90,6 +90,11 @@ public class GasConduit extends GasGasBlock implements Autotiler {
     }
 
     @Override
+    public void setBars(){
+        super.setBars();
+    }
+
+    @Override
     public void handlePlacementLine(Seq<BuildPlan> plans) {
         if (bridgeReplacement == null)
             return;
@@ -150,7 +155,7 @@ public class GasConduit extends GasGasBlock implements Autotiler {
         @Override
         public boolean acceptGas(Building source, Gas gas) {
             noSleep();
-            return (gasses.current() == gas || gasses.currentAmount() < 0.2f) && (tile == null || (source.relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
+            return (gasses.current() == gas || gasses.currentAmount() < 0.2f) && (tile == null||source==null || (source.relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
         }
 
         @Override

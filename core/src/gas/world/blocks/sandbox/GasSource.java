@@ -21,21 +21,19 @@ import mindustry.world.meta.BlockGroup;
 public class GasSource extends GasBlock {
     public GasSource(String name) {
         super(name);
-        this.hasGasses = true;
-        this.outputsGas=true;
-        this.update = true;
-        this.solid = true;
-        this.group = BlockGroup.transportation;
-        this.configurable = true;
-        this.saveConfig = true;
-        this.noUpdateDisabled = true;
-        this.displayFlow = false;
-        this.config(Gas.class, (t, gas) -> {
-            GasSourceBuild tile=(GasSourceBuild)t;
+        hasGasses = true;
+        outputsGas=true;
+        update = true;
+        solid = true;
+        group = BlockGroup.transportation;
+        configurable = true;
+        saveConfig = true;
+        noUpdateDisabled = true;
+        displayFlow = false;
+        config(Gas.class, (GasSourceBuild tile,Gas gas) -> {
             tile.source = gas;
         });
-        this.configClear((t) -> {
-            GasSourceBuild tile=(GasSourceBuild)t;
+        configClear((GasSourceBuild tile) -> {
             tile.source = null;
         });
     }
