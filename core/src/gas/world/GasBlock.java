@@ -202,7 +202,7 @@ public class GasBlock extends Block{
             }else{
                 current = entity -> entity.gasses == null ? null : entity.gasses.current();
             }
-            bars.<GasBuilding>add("liquid", entity -> new Bar(() -> entity.gasses.get(current.get(entity)) <= 0.001f ? Core.bundle.get("bar.liquid") : current.get(entity).localizedName,
+            bars.<GasBuilding>add("gas", entity -> new Bar(() -> entity.gasses.get(current.get(entity)) <= 0.001f ? Core.bundle.get("bar.liquid") : current.get(entity).localizedName,
             () -> current.get(entity).barColor(), () -> entity == null || entity.liquids == null ? 0f : entity.gasses.get(current.get(entity)) / liquidCapacity));
 
         }
