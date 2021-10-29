@@ -283,7 +283,7 @@ project(":annotations") {
 
 configure([":core", ":tools"].collect { project(it) }) {
     java {
-        withJavadocJar()
+//        withJavadocJar()
         withSourcesJar()
     }
 
