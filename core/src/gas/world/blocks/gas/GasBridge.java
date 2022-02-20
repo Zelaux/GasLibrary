@@ -1,8 +1,12 @@
 package gas.world.blocks.gas;
 
+import gas.type.*;
 import gas.world.blocks.distribution.*;
 import mindustry.gen.*;
+import mindustry.type.*;
 import mindustry.world.meta.*;
+
+import static mindustry.Vars.*;
 
 public class GasBridge extends GasItemBridge {
 
@@ -18,6 +22,10 @@ public class GasBridge extends GasItemBridge {
 
     public class GasBridgeBuild extends GasItemBridgeBuild {
 
+        @Override
+        public boolean acceptGas(Building source, Gas gas) {
+            return hasGasses && team == source.team && (gasses.current() == gas || gasses.get(gasses.current()) < 0.2f) && checkAccept(source, world.tile(link));
+        }
         @Override
         public void updateTransport(Building other) {
             if (warmup >= 0.25f) {

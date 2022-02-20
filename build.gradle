@@ -1,8 +1,8 @@
 buildscript {
     ext {
-        arcHash = "v133"
+        arcHash = "v135"
         packerHash = '128'
-        mindustryVersion = "v133"
+        mindustryVersion = "v135"
         aciVersion = "9f9ed7da24"
         modsDirectories = [];
         def file = new File(rootDir, "modsDirectoies.txt");
@@ -19,7 +19,7 @@ buildscript {
         }
         println "core: " + modCoreVersionDemo
         modCoreVersion = modCoreVersionDemo
-        modCoreVersion = "e36baae2aa2"
+        modCoreVersion = "8dbf4593d2e"
     }
     repositories {
         mavenLocal()
@@ -34,7 +34,7 @@ buildscript {
         classpath "com.github.Anuken.Mindustry:core:$mindustryVersion"
         classpath "com.github.Anuken.Mindustry:tools:$mindustryVersion"
         classpath "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-        classpath "com.github.Anuken.Arc:packer:$packerHash"
+        classpath "com.github.Anuken.Arc:packer:$arcHash"
     }
 }
 plugins {

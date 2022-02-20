@@ -395,7 +395,7 @@ public class GasBuilding extends Building{
         if((next instanceof GasBuilding)){
             return moveGas(next, gas);
         }
-        if(nextTile != null && leaks && !nextTile.block().solid && !nextTile.block().hasLiquids){
+        if(nextTile != null && leaks && !nextTile.block().solid && !(nextTile.block() instanceof GasBlock gasBlock && gasBlock.hasGasses) ){
             float leakAmount = gasses.get(gas) / 1.5F;
 
             Clouds.deposit(nextTile, tile, gas, leakAmount);
