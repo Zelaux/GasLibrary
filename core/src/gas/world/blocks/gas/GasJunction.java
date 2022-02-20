@@ -24,7 +24,7 @@ public class GasJunction extends GasGasBlock{
     @Override
     public void setBars(){
         super.setBars();
-        bars.remove("liquid");
+        bars.remove("gas");
     }
 
     @Override
