@@ -8,6 +8,7 @@ import arc.math.*;
 import arc.math.geom.*;
 import arc.struct.*;
 import arc.util.*;
+import gas.gen.*;
 import gas.type.*;
 import gas.world.*;
 import mindustry.*;
@@ -98,7 +99,7 @@ public class GasConduit extends GasGasBlock implements Autotiler {
     public void handlePlacementLine(Seq<BuildPlan> plans) {
         if (bridgeReplacement == null)
             return;
-        Placement.calculateBridges(plans, (ItemBridge) bridgeReplacement);
+        GasPlacement.calculateBridges(plans, (GasBridge) bridgeReplacement);
     }
 
     @Override
