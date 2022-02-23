@@ -1,5 +1,6 @@
 package gas.type;
 
+import arc.*;
 import arc.graphics.Color;
 import arc.struct.Seq;
 import gas.content.Gasses;
@@ -27,6 +28,9 @@ public class Gas  extends UnlockableContent {
 
     public Gas(String name) {
         super(name);
+        this.localizedName = Core.bundle.get( "gas." + this.name + ".name", this.name);
+        this.description = Core.bundle.get("gas."+ this.name + ".description",description);
+        this.details = Core.bundle.get("gas." + this.name + ".details",details);
         realName=name;
         for (Gas other : Gasses.all()) {
             if (other.realName.equals(realName)){
@@ -57,6 +61,19 @@ public class Gas  extends UnlockableContent {
         this.stats.addPercent(Stat.viscosity, this.viscosity);
     }
 
+    @Override
+    public void loadIcon(){
+        super.loadIcon();
+        fullIcon =
+        Core.atlas.find( "gas-" + name + "-full",
+        Core.atlas.find(name + "-full",
+        Core.atlas.find(name,
+        Core.atlas.find("gas-" + name,
+        Core.atlas.find(name + "1",
+        fullIcon)))));
+
+        uiIcon = Core.atlas.find( "gas-" + name + "-ui", uiIcon);
+    }
     public Color barColor() {
         return this.barColor == null ? this.color : this.barColor;
     }
