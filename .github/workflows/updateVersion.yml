@@ -27,4 +27,4 @@ jobs:
           git config --global user.name "Github Actions"
           git add versions/*
           git commit --allow-empty -m "[version-update]"
-          git push https://Zelaux:${{ secrets.API_TOKEN_GITHUB }}@github.com/Zelaux/AdvancedContentInfo
+          git push https://Zelaux:${{ secrets.API_TOKEN_GITHUB }}@github.com/Zelaux/GasLibrary
