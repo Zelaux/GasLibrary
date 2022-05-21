@@ -4,25 +4,24 @@ import gas.entities.comp.*;
 import arc.scene.ui.layout.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -30,9 +29,10 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -44,15 +44,16 @@ import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.input.*;
 import mindustry.world.blocks.power.LightBlock.*;
 import mindustry.graphics.*;
@@ -61,7 +62,6 @@ import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
@@ -116,7 +116,7 @@ public class GasLightBlock extends GasBlock {
         @Override
         public void control(LAccess type, double p1, double p2, double p3, double p4) {
             if (type == LAccess.color) {
-                color = Color.rgba8888((float) p1, (float) p2, (float) p3, 1f);
+                color = Tmp.c1.fromDouble(p1).rgba8888();
             }
             super.control(type, p1, p2, p3, p4);
         }
@@ -125,7 +125,7 @@ public class GasLightBlock extends GasBlock {
         public void draw() {
             super.draw();
             Draw.blend(Blending.additive);
-            Draw.color(Tmp.c1.set(color), efficiency() * 0.3f);
+            Draw.color(Tmp.c1.set(color), efficiency * 0.3f);
             Draw.rect(topRegion, x, y);
             Draw.color();
             Draw.blend();
@@ -146,7 +146,7 @@ public class GasLightBlock extends GasBlock {
 
         @Override
         public void drawLight() {
-            Drawf.light(team, x, y, lightRadius * Math.min(smoothTime, 2f), Tmp.c1.set(color), brightness * efficiency());
+            Drawf.light(x, y, lightRadius * Math.min(smoothTime, 2f), Tmp.c1.set(color), brightness * efficiency);
         }
 
         @Override

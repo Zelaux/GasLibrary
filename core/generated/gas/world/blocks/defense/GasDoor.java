@@ -6,25 +6,24 @@ import mindustry.entities.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import arc.Graphics.*;
-import gas.world.blocks.defense.*;
-import arc.util.*;
+import mindustry.world.blocks.heat.*;
+import arc.audio.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
-import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.liquid.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -32,14 +31,15 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import arc.audio.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
+import mindustry.world.modules.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
-import mindustry.world.modules.*;
+import arc.Graphics.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import gas.world.consumers.*;
@@ -47,22 +47,22 @@ import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
-import mindustry.world.blocks.defense.Door.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
-import gas.world.blocks.production.*;
+import mindustry.world.blocks.defense.Door.*;
+import mindustry.world.blocks.units.*;
+import arc.util.*;
 import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
+import gas.world.blocks.production.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import arc.Graphics.Cursor.*;
@@ -93,6 +93,7 @@ public class GasDoor extends GasWall {
         consumesTap = true;
         config(Boolean.class, (GasDoorBuild base, Boolean open) -> {
             doorSound.at(base);
+            base.effect();
             for (var entity : base.chained) {
                 // skip doors with things in them
                 if ((Units.anyEntities(entity.tile) && !open) || entity.open == open) {
@@ -100,14 +101,13 @@ public class GasDoor extends GasWall {
                 }
                 entity.open = open;
                 pathfinder.updateTile(entity.tile());
-                entity.effect();
             }
         });
     }
 
     @Override
-    public TextureRegion getRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        return req.config == Boolean.TRUE ? openRegion : region;
+    public TextureRegion getPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        return plan.config == Boolean.TRUE ? openRegion : region;
     }
 
     public class GasDoorBuild extends GasBuilding {
@@ -155,7 +155,7 @@ public class GasDoor extends GasWall {
         }
 
         public void effect() {
-            (open ? closefx : openfx).at(this);
+            (open ? closefx : openfx).at(this, size);
         }
 
         public void updateChained() {

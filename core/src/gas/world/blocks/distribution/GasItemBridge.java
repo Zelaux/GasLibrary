@@ -75,7 +75,7 @@ public class GasItemBridge extends GasBlock {
     }
 
     @Override
-    public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list) {
+    public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list) {
         otherReq = null;
         list.each(other -> {
             if (other.block == this && req != other && req.config instanceof Point2 p && p.equals(other.x - req.x, other.y - req.y)) {
@@ -245,7 +245,7 @@ public class GasItemBridge extends GasBlock {
         }
 
         @Override
-        public boolean onConfigureTileTapped(Building other) {
+        public boolean onConfigureBuildTapped(Building other) {
             // reverse connection
             if (other instanceof GasItemBridgeBuild b && b.link == pos()) {
                 configure(other.pos());

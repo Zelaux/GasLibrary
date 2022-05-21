@@ -1,37 +1,40 @@
 package gas.world.blocks.power;
 
+import mindustry.entities.units.*;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
+import arc.*;
 import gas.world.meta.*;
 import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.power.PowerGenerator.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
+import arc.struct.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.distribution.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
@@ -41,23 +44,22 @@ import gas.world.consumers.*;
 import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import arc.*;
-import mindustry.world.consumers.*;
+import arc.graphics.g2d.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
-import arc.struct.*;
+import mindustry.world.blocks.power.PowerGenerator.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 
@@ -70,11 +72,24 @@ public class GasPowerGenerator extends GasPowerDistributor {
 
     public Stat generationType = Stat.basePowerGeneration;
 
+    public DrawBlock drawer = new DrawDefault();
+
     public GasPowerGenerator(String name) {
         super(name);
         sync = true;
         baseExplosiveness = 5f;
         flags = EnumSet.of(BlockFlag.generator);
+    }
+
+    @Override
+    public TextureRegion[] icons() {
+        return drawer.finalIcons(this);
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        drawer.load(this);
     }
 
     @Override
@@ -86,9 +101,14 @@ public class GasPowerGenerator extends GasPowerDistributor {
     @Override
     public void setBars() {
         super.setBars();
-        if (hasPower && outputsPower && !consumes.hasPower()) {
-            bars.add("power", (GasGeneratorBuild entity) -> new Bar(() -> Core.bundle.format("bar.poweroutput", Strings.fixed(entity.getPowerProduction() * 60 * entity.timeScale(), 1)), () -> Pal.powerBar, () -> entity.productionEfficiency));
+        if (hasPower && outputsPower && consPower != null) {
+            addBar("power", (GasGeneratorBuild entity) -> new Bar(() -> Core.bundle.format("bar.poweroutput", Strings.fixed(entity.getPowerProduction() * 60 * entity.timeScale(), 1)), () -> Pal.powerBar, () -> entity.productionEfficiency));
         }
+    }
+
+    @Override
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        drawer.drawPlan(this, plan, list);
     }
 
     @Override
@@ -104,6 +124,17 @@ public class GasPowerGenerator extends GasPowerDistributor {
          * The efficiency of the producer. An efficiency of 1.0 means 100%
          */
         public float productionEfficiency = 0.0f;
+
+        @Override
+        public void draw() {
+            drawer.draw(this);
+        }
+
+        @Override
+        public void drawLight() {
+            super.drawLight();
+            drawer.drawLight(this);
+        }
 
         @Override
         public float ambientVolume() {

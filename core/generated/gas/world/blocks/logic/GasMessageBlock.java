@@ -4,37 +4,37 @@ import gas.entities.comp.*;
 import arc.scene.ui.layout.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import arc.Input.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
 import gas.world.meta.*;
 import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import arc.Input.*;
+import mindustry.world.blocks.payloads.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
-import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
+import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
 import arc.util.pooling.*;
 import gas.world.*;
-import gas.world.blocks.defense.turrets.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -47,22 +47,22 @@ import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
 import mindustry.ui.dialogs.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.logic.MessageBlock.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
-import gas.world.blocks.storage.*;
-import arc.scene.ui.*;
-import arc.util.io.*;
+import gas.world.draw.*;
 import mindustry.world.blocks.defense.*;
+import mindustry.world.blocks.logic.MessageBlock.*;
+import gas.gen.*;
+import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import gas.world.blocks.production.*;
+import arc.util.io.*;
+import arc.scene.ui.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 import static mindustry.Vars.*;
@@ -132,7 +132,7 @@ public class GasMessageBlock extends GasBlock {
 
         @Override
         public void buildConfiguration(Table table) {
-            table.button(Icon.pencil, () -> {
+            table.button(Icon.pencil, Styles.cleari, () -> {
                 if (mobile) {
                     Core.input.getTextInput(new TextInput() {
 
@@ -163,20 +163,32 @@ public class GasMessageBlock extends GasBlock {
                         return true;
                     });
                     a.setMaxLength(maxTextLength);
+                    dialog.cont.row();
+                    dialog.cont.label(() -> a.getText().length() + " / " + maxTextLength).color(Color.lightGray);
                     dialog.buttons.button("@ok", () -> {
                         if (!a.getText().equals(message.toString()))
                             configure(a.getText());
                         dialog.hide();
                     }).size(130f, 60f);
                     dialog.update(() -> {
-                        if (tile.block() != GasMessageBlock.this) {
+                        if (tile.build != this) {
                             dialog.hide();
                         }
                     });
+                    dialog.closeOnBack();
                     dialog.show();
                 }
                 deselect();
             }).size(40f);
+        }
+
+        @Override
+        public boolean onConfigureBuildTapped(Building other) {
+            if (this == other) {
+                deselect();
+                return false;
+            }
+            return true;
         }
 
         @Override

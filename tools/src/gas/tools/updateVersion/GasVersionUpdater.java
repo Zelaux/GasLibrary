@@ -10,18 +10,22 @@ import java.util.zip.*;
 
 public class GasVersionUpdater{
     static String mindustryVersion;
+    static String arcVersion;
     static Seq<String> argsSeq;
 
     public static void main(String[] args){
         argsSeq = Seq.with(args);
-        mindustryVersion = argsSeq.find(s -> s.startsWith("v"));
+        mindustryVersion = argsSeq.find(s -> s.startsWith("v_"));
+        arcVersion = argsSeq.find(s -> s.startsWith("arc_"));
         if(mindustryVersion == null){
             System.out.println("Please put mindustry version in args!!!");
             System.exit(1);
             return;
         }
+        mindustryVersion = mindustryVersion.substring("v_".length());
+        arcVersion = arcVersion == null ? mindustryVersion : arcVersion.substring("arc_".length());
 
-        LibrariesDownloader.download(mindustryVersion);
+        LibrariesDownloader.downloadV7(mindustryVersion, arcVersion);
 
         runTask("Starting creating gasBlocks for version " + mindustryVersion, CreatingGasBlocks::run);
 

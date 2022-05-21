@@ -28,15 +28,8 @@ public class GasVars extends ModVars{
     }
 
     @Override
-    public ContentList[] getContentList(){
-        return new ContentList[]{
-        new GasBlocks(),
-        };
+    public void loadContent(){
+        GasBlocks.load();
 
-    }
-
-    @Override
-    public String getFullName(String name){
-        return name;
     }
 }

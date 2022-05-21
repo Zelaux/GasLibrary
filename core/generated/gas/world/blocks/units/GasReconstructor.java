@@ -1,69 +1,71 @@
 package gas.world.blocks.units;
 
 import mindustry.entities.units.*;
-import gas.entities.comp.*;
+import gas.world.blocks.distribution.*;
 import mindustry.entities.*;
 import gas.type.*;
+import gas.world.blocks.campaign.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
 import gas.io.*;
 import gas.world.meta.*;
-import mindustry.ui.*;
+import mindustry.game.EventType.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
-import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import mindustry.ui.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import mindustry.world.blocks.units.Reconstructor.*;
 import gas.world.blocks.gas.*;
-import gas.world.blocks.campaign.*;
+import mindustry.io.*;
+import arc.math.geom.*;
+import gas.entities.comp.*;
 import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import mindustry.*;
 import gas.world.consumers.*;
-import arc.graphics.g2d.*;
+import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
 import gas.*;
-import mindustry.game.EventType.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import arc.graphics.g2d.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.type.*;
@@ -80,14 +82,17 @@ public class GasReconstructor extends GasUnitBlock {
 
     public GasReconstructor(String name) {
         super(name);
+        regionRotated1 = 1;
+        regionRotated2 = 2;
+        commandable = true;
     }
 
     @Override
-    public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        Draw.rect(region, req.drawx(), req.drawy());
-        Draw.rect(inRegion, req.drawx(), req.drawy(), req.rotation * 90);
-        Draw.rect(outRegion, req.drawx(), req.drawy(), req.rotation * 90);
-        Draw.rect(topRegion, req.drawx(), req.drawy());
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        Draw.rect(region, plan.drawx(), plan.drawy());
+        Draw.rect(inRegion, plan.drawx(), plan.drawy(), plan.rotation * 90);
+        Draw.rect(outRegion, plan.drawx(), plan.drawy(), plan.rotation * 90);
+        Draw.rect(topRegion, plan.drawx(), plan.drawy());
     }
 
     @Override
@@ -98,8 +103,8 @@ public class GasReconstructor extends GasUnitBlock {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("progress", (GasReconstructorBuild entity) -> new Bar("bar.progress", Pal.ammo, entity::fraction));
-        bars.add("units", (GasReconstructorBuild e) -> new Bar(() -> e.unit() == null ? "[lightgray]" + Iconc.cancel : Core.bundle.format("bar.unitcap", Fonts.getUnicodeStr(e.unit().name), e.team.data().countType(e.unit()), Units.getCap(e.team)), () -> Pal.power, () -> e.unit() == null ? 0f : (float) e.team.data().countType(e.unit()) / Units.getCap(e.team)));
+        addBar("progress", (GasReconstructorBuild entity) -> new Bar("bar.progress", Pal.ammo, entity::fraction));
+        addBar("units", (GasReconstructorBuild e) -> new Bar(() -> e.unit() == null ? "[lightgray]" + Iconc.cancel : Core.bundle.format("bar.unitcap", Fonts.getUnicodeStr(e.unit().name), e.team.data().countType(e.unit()), Units.getCap(e.team)), () -> Pal.power, () -> e.unit() == null ? 0f : (float) e.team.data().countType(e.unit()) / Units.getCap(e.team)));
     }
 
     @Override
@@ -126,8 +131,9 @@ public class GasReconstructor extends GasUnitBlock {
     @Override
     public void init() {
         capacities = new int[Vars.content.items().size];
-        if (consumes.has(ConsumeType.item) && consumes.get(ConsumeType.item) instanceof ConsumeItems) {
-            for (var stack : consumes.<ConsumeItems>get(ConsumeType.item).items) {
+        ConsumeItems cons = findConsumer(c -> c instanceof ConsumeItems);
+        if (cons != null) {
+            for (var stack : cons.items) {
                 capacities[stack.item.id] = Math.max(capacities[stack.item.id], stack.amount * 2);
                 itemCapacity = Math.max(itemCapacity, stack.amount * 2);
             }
@@ -141,13 +147,26 @@ public class GasReconstructor extends GasUnitBlock {
 
     public class GasReconstructorBuild extends GasUnitBuild {
 
+        @Nullable
+        public Vec2 commandPos;
+
         public float fraction() {
             return progress / constructTime;
         }
 
         @Override
+        public Vec2 getCommandPosition() {
+            return commandPos;
+        }
+
+        @Override
+        public void onCommand(Vec2 target) {
+            commandPos = target;
+        }
+
+        @Override
         public boolean acceptUnitPayload(Unit unit) {
-            return hasUpgrade(unit.type);
+            return hasUpgrade(unit.type) && !upgrade(unit.type).isBanned();
         }
 
         @Override
@@ -157,7 +176,7 @@ public class GasReconstructor extends GasUnitBlock {
             }
             var upgrade = upgrade(pay.unit.type);
             if (upgrade != null) {
-                if (!upgrade.unlockedNowHost()) {
+                if (!upgrade.unlockedNowHost() && !team.isAI()) {
                     // flash "not researched"
                     pay.showOverlay(Icon.tree);
                 }
@@ -166,7 +185,7 @@ public class GasReconstructor extends GasUnitBlock {
                     pay.showOverlay(Icon.cancel);
                 }
             }
-            return upgrade != null && upgrade.unlockedNowHost() && !upgrade.isBanned();
+            return upgrade != null && (team.isAI() || upgrade.unlockedNowHost()) && !upgrade.isBanned();
         }
 
         @Override
@@ -227,13 +246,16 @@ public class GasReconstructor extends GasUnitBlock {
                 } else {
                     // update progress
                     if (moveInPayload()) {
-                        if (consValid()) {
+                        if (efficiency > 0) {
                             valid = true;
                             progress += edelta() * state.rules.unitBuildSpeed(team);
                         }
                         // upgrade the unit
                         if (progress >= constructTime) {
                             payload.unit = upgrade(payload.unit.type).create(payload.unit.team());
+                            if (commandPos != null && payload.unit.isCommandable()) {
+                                payload.unit.command().commandPosition(commandPos);
+                            }
                             progress %= 1f;
                             Effect.shake(2f, 3f, this);
                             Fx.producesmoke.at(this);
@@ -256,14 +278,14 @@ public class GasReconstructor extends GasUnitBlock {
 
         @Override
         public boolean shouldConsume() {
-            return constructing();
+            return constructing() && enabled;
         }
 
         public UnitType unit() {
             if (payload == null)
                 return null;
             UnitType t = upgrade(payload.unit.type);
-            return t != null && t.unlockedNowHost() ? t : null;
+            return t != null && (t.unlockedNowHost() || team.isAI()) ? t : null;
         }
 
         public boolean constructing() {
@@ -272,7 +294,7 @@ public class GasReconstructor extends GasUnitBlock {
 
         public boolean hasUpgrade(UnitType type) {
             UnitType t = upgrade(type);
-            return t != null && t.unlockedNowHost() && !type.isBanned();
+            return t != null && (t.unlockedNowHost() || team.isAI()) && !type.isBanned();
         }
 
         public UnitType upgrade(UnitType type) {
@@ -282,20 +304,24 @@ public class GasReconstructor extends GasUnitBlock {
 
         @Override
         public byte version() {
-            return 1;
+            return 2;
         }
 
         @Override
         public void write(Writes write) {
             super.write(write);
             write.f(progress);
+            TypeIO.writeVecNullable(write, commandPos);
         }
 
         @Override
         public void read(Reads read, byte revision) {
             super.read(read, revision);
-            if (revision == 1) {
+            if (revision >= 1) {
                 progress = read.f();
+            }
+            if (revision >= 2) {
+                commandPos = TypeIO.readVecNullable(read);
             }
         }
     }

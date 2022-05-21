@@ -4,27 +4,26 @@ import gas.entities.comp.*;
 import arc.graphics.gl.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.experimental.*;
-import gas.io.*;
-import mindustry.world.blocks.logic.LogicDisplay.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
+import mindustry.world.blocks.logic.LogicDisplay.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.payloads.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -32,49 +31,55 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
+import mindustry.*;
 import gas.world.consumers.*;
-import mindustry.world.blocks.payloads.*;
+import arc.graphics.g2d.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
-import arc.graphics.g2d.*;
+import gas.io.*;
 import mindustry.ui.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 
 public class GasLogicDisplay extends GasBlock {
 
-    public static final byte commandClear = 0, commandColor = 1, commandStroke = 2, commandLine = 3, commandRect = 4, commandLineRect = 5, commandPoly = 6, commandLinePoly = 7, commandTriangle = 8, commandImage = 9;
+    public static final byte commandClear = 0, commandColor = 1, // virtual command, unpacked in instruction
+    commandColorPack = 2, commandStroke = 3, commandLine = 4, commandRect = 5, commandLineRect = 6, commandPoly = 7, commandLinePoly = 8, commandTriangle = 9, commandImage = 10;
 
     public int maxSides = 25;
 
     public int displaySize = 64;
 
+    public float scaleFactor = 1f;
+
     public GasLogicDisplay(String name) {
         super(name);
         update = true;
         solid = true;
+        canOverdrive = false;
         group = BlockGroup.logic;
         drawDisabled = false;
         envEnabled = Env.any;
@@ -99,6 +104,9 @@ public class GasLogicDisplay extends GasBlock {
         @Override
         public void draw() {
             super.draw();
+            // don't even bother processing anything when displays are off.
+            if (!Vars.renderer.drawDisplays)
+                return;
             Draw.draw(Draw.z(), () -> {
                 if (buffer == null) {
                     buffer = new FrameBuffer(displaySize, displaySize);
@@ -107,6 +115,7 @@ public class GasLogicDisplay extends GasBlock {
                     buffer.end();
                 }
             });
+            // don't bother processing commands if displays are off
             if (!commands.isEmpty()) {
                 Draw.draw(Draw.z(), () -> {
                     Tmp.m1.set(Draw.proj());
@@ -149,7 +158,7 @@ public class GasLogicDisplay extends GasBlock {
             Draw.blend(Blending.disabled);
             Draw.draw(Draw.z(), () -> {
                 if (buffer != null) {
-                    Draw.rect(Draw.wrap(buffer.getTexture()), x, y, buffer.getWidth() * Draw.scl, -buffer.getHeight() * Draw.scl);
+                    Draw.rect(Draw.wrap(buffer.getTexture()), x, y, buffer.getWidth() * scaleFactor * Draw.scl, -buffer.getHeight() * scaleFactor * Draw.scl);
                 }
             });
             Draw.blend();

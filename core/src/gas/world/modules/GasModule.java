@@ -1,188 +1,182 @@
 package gas.world.modules;
 
-import gas.content.Gasses;
-import gas.type.Gas;
-import arc.math.Mathf;
-import arc.math.WindowedMean;
-import arc.util.Interval;
-import arc.util.Nullable;
-import arc.util.io.Reads;
-import arc.util.io.Writes;
-import mindustry.Vars;
-import mindustry.ctype.ContentType;
-import mindustry.world.modules.BlockModule;
+import arc.math.*;
+import arc.struct.*;
+import arc.util.*;
+import arc.util.io.*;
+import gas.content.*;
+import gas.type.*;
+import mindustry.world.modules.*;
 
-import java.util.Arrays;
+import java.util.*;
 
-public class GasModule extends BlockModule {
+import static mindustry.Vars.content;
+
+public class GasModule extends BlockModule{
     private static final int windowSize = 3;
-    private static final int updateInterval = 60;
     private static final Interval flowTimer = new Interval(2);
-    private static final float pollScl = 20.0F;
-    private float[] gases;
-    private float total;
-    private Gas current;
-    private float smoothLiquid;
-    private boolean hadFlow;
-    @Nullable
-    private WindowedMean flow;
-    private float lastAdded;
-    private float currentFlowRate;
+    private static final float pollScl = 20f;
+    private static final Bits cacheBits = new Bits();
+    private static WindowedMean[] cacheFlow;
+    private static float[] cacheSums;
+    private static float[] displayFlow;
+    private float[] gasses = new float[Gasses.all().size];
+    private Gas current = Gasses.getByID(0);
 
-    public GasModule() {
-        this.gases = new float[Vars.content.getBy(Gasses.gasType()).size];
-        this.current = Gasses.getByID(0);
-    }
+    private @Nullable
+    WindowedMean[] flow;
 
-    public void update(boolean showFlow) {
-        this.smoothLiquid = Mathf.lerpDelta(this.smoothLiquid, this.currentAmount(), 0.1F);
-        if (showFlow) {
-            if (flowTimer.get(1, 20.0F)) {
-                if (this.flow == null) {
-                    this.flow = new WindowedMean(3);
+    public void updateFlow(){
+        if(flowTimer.get(1, pollScl)){
+            if(flow == null){
+                if(cacheFlow == null || cacheFlow.length != gasses.length){
+                    cacheFlow = new WindowedMean[gasses.length];
+                    for(int i = 0; i < gasses.length; i++){
+                        cacheFlow[i] = new WindowedMean(windowSize);
+                    }
+                    cacheSums = new float[gasses.length];
+                    displayFlow = new float[gasses.length];
+                }else{
+                    for(int i = 0; i < gasses.length; i++){
+                        cacheFlow[i].reset();
+                    }
+                    Arrays.fill(cacheSums, 0);
+                    cacheBits.clear();
                 }
 
-                if (this.lastAdded > 1.0E-4F) {
-                    this.hadFlow = true;
+                Arrays.fill(displayFlow, -1);
+
+                flow = cacheFlow;
+            }
+
+            boolean updateFlow = flowTimer.get(30);
+
+            for(int i = 0; i < gasses.length; i++){
+                flow[i].add(cacheSums[i]);
+                if(cacheSums[i] > 0){
+                    cacheBits.set(i);
                 }
+                cacheSums[i] = 0;
 
-                this.flow.add(this.lastAdded);
-                this.lastAdded = 0.0F;
-                if (this.currentFlowRate < 0.0F || flowTimer.get(60.0F)) {
-                    this.currentFlowRate = this.flow.hasEnoughData() ? this.flow.mean() / 20.0F : -1.0F;
+                if(updateFlow){
+                    displayFlow[i] = flow[i].hasEnoughData() ? flow[i].mean() / pollScl : -1;
                 }
             }
-        } else {
-            this.currentFlowRate = -1.0F;
-            this.flow = null;
-            this.hadFlow = false;
         }
-
     }
 
-    public float getFlowRate() {
-        return this.currentFlowRate * 60.0F;
+    public void stopFlow(){
+        flow = null;
     }
 
-    public boolean hadFlow() {
-        return this.hadFlow;
+    /** @return current gas's flow rate in u/s; any value < 0 means 'not ready'. */
+    public float getFlowRate(Gas gas){
+        return flow == null ? -1f : displayFlow[gas.id] * 60;
     }
 
-    public float smoothAmount() {
-        return this.smoothLiquid;
+    public boolean hasFlowGas(Gas gas){
+        return flow != null && cacheBits.get(gas.id);
     }
 
-    public float total() {
-        return this.total;
+    /** Last received or loaded gas. Only valid for gas modules with 1 type of gas. */
+    public Gas current(){
+        return current;
     }
 
-    public Gas current() {
-        return this.current;
+    public void reset(Gas gas, float amount){
+        Arrays.fill(gasses, 0f);
+        gasses[gas.id] = amount;
+        current = gas;
     }
 
-    public void reset(Gas liquid, float amount) {
-        Arrays.fill(this.gases, 0.0F);
-        this.gases[liquid.id] = amount;
-        this.total = amount;
-        this.current = liquid;
+    public float currentAmount(){
+        return gasses[current.id];
     }
 
-    public float currentAmount() {
-        return this.gases[this.current.id];
+    public float get(Gas gas){
+        return gasses[gas.id];
     }
 
-    public float get(Gas liquid) {
-        return this.gases[liquid.id];
+    public void clear(){
+        Arrays.fill(gasses, 0);
     }
 
-    public void clear() {
-        this.total = 0.0F;
-        Arrays.fill(this.gases, 0.0F);
-    }
+    public void add(Gas gas, float amount){
+        gasses[gas.id] += amount;
+        current = gas;
 
-    public void add(Gas liquid, float amount) {
-        float[] var10000 = this.gases;
-        short var10001 = liquid.id;
-        var10000[var10001] += amount;
-        this.total += amount;
-        this.current = liquid;
-        if (this.flow != null) {
-            this.lastAdded += Math.max(amount, 0.0F);
+        if(flow != null){
+            cacheSums[gas.id] += Math.max(amount, 0);
         }
-
     }
 
-    public void remove(Gas liquid, float amount) {
-        this.add(liquid, -amount);
+    public void handleFlow(Gas gas, float amount){
+        if(flow != null){
+            cacheSums[gas.id] += Math.max(amount, 0);
+        }
     }
 
-    public void each(GasConsumer cons) {
-        for (int i = 0; i < this.gases.length; ++i) {
-            if (this.gases[i] > 0.0F) {
-                cons.accept(Gasses.getByID(i), this.gases[i]);
+    public void remove(Gas gas, float amount){
+        //cap to prevent negative removal
+        add(gas, Math.max(-amount, -gasses[gas.id]));
+    }
+
+    public void each(GasConsumer cons){
+        for(int i = 0; i < gasses.length; i++){
+            if(gasses[i] > 0){
+                cons.accept(Gasses.getByID(i), gasses[i]);
             }
         }
-
     }
 
-    public float sum(GasCalculator calc) {
-        float sum = 0.0F;
-
-        for (int i = 0; i < this.gases.length; ++i) {
-            if (this.gases[i] > 0.0F) {
-                sum += calc.get(Gasses.getByID(i), this.gases[i]);
+    public float sum(GasCalculator calc){
+        float sum = 0f;
+        for(int i = 0; i < gasses.length; i++){
+            if(gasses[i] > 0){
+                sum += calc.get(Gasses.getByID(i), gasses[i]);
             }
         }
-
         return sum;
     }
 
-    public void write(Writes write) {
+    @Override
+    public void write(Writes write){
         int amount = 0;
-        float[] var3 = this.gases;
-        int var4 = var3.length;
-
-        for (int var5 = 0; var5 < var4; ++var5) {
-            float liquid = var3[var5];
-            if (liquid > 0.0F) {
-                ++amount;
-            }
+        for(float gas : gasses){
+            if(gas > 0) amount++;
         }
 
-        write.s(amount);
+        write.s(amount); //amount of liquids
 
-        for (int i = 0; i < this.gases.length; ++i) {
-            if (this.gases[i] > 0.0F) {
-                write.s(i);
-                write.f(this.gases[i]);
+        for(int i = 0; i < gasses.length; i++){
+            if(gasses[i] > 0){
+                write.s(i); //gas ID
+                write.f(gasses[i]); //gas amount
             }
         }
-
     }
 
-    public void read(Reads read, boolean legacy) {
-        Arrays.fill(this.gases, 0.0F);
-        this.total = 0.0F;
+    @Override
+    public void read(Reads read, boolean legacy){
+        Arrays.fill(gasses, 0);
         int count = legacy ? read.ub() : read.s();
 
-        for (int j = 0; j < count; ++j) {
-            int gasid = legacy ? read.ub() : read.s();
+        for(int j = 0; j < count; j++){
+            Gas liq = Gasses.getByID(legacy ? read.ub() : read.s());
+            int liquidid = liq.id;
             float amount = read.f();
-            this.gases[gasid] = amount;
-            if (amount > 0.0F) {
-                this.current = Gasses.getByID(gasid);
+            gasses[liquidid] = amount;
+            if(amount > 0){
+                current = liq;
             }
-
-            this.total += amount;
         }
-
     }
 
-    public interface GasConsumer {
-        void accept(Gas var1, float var2);
+    public interface GasConsumer{
+        void accept(Gas gas, float amount);
     }
 
-    public interface GasCalculator {
-        float get(Gas var1, float var2);
+    public interface GasCalculator{
+        float get(Gas gas, float amount);
     }
 }

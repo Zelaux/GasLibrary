@@ -24,7 +24,12 @@ public class ImportProcessor{
     "gas.world.blocks.environment",
     "gas.world.blocks.experimental",
     "gas.world.blocks.legacy",
-    "gas.world.blocks.storage.CoreBlock"
+    "gas.world.blocks.storage.CoreBlock",
+    "gas.entities.pattern",
+    "gas.ctype",
+    "gas.world.blocks.units.UnitAssemblerModule",
+    "gas.world.blocks.units.UnitAssembler",
+    "gas.entities.part"
     );
     private static final ObjectSet<String> illegalImportsStarts = ObjectSet.with(
     "gas.ai.",
@@ -46,9 +51,9 @@ public class ImportProcessor{
         extraImport(newImport(name, isStatic, isAsteric));
     }
 private static void removeIllegal(ObjectSet<String>... importSets){
-    Seq<String> illegalImportsStarts = ImportProcessor.illegalImportsStarts.asArray();
+    Seq<String> illegalImportsStarts = ImportProcessor.illegalImportsStarts.toSeq();
     for(ObjectSet<String> importSet : importSets){
-        for(String oneImport : importSet.asArray()){
+        for(String oneImport : importSet.toSeq()){
             if (illegalImports.contains(oneImport) || illegalImportsStarts.contains(oneImport::startsWith)){
                 importSet.remove(oneImport);
             }

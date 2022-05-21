@@ -4,24 +4,25 @@ import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.experimental.*;
 import gas.world.meta.*;
 import mindustry.game.EventType.*;
 import gas.world.blocks.units.*;
+import mindustry.world.blocks.heat.*;
 import mindustry.world.blocks.defense.turrets.ItemTurret.*;
-import gas.world.blocks.defense.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
+import mindustry.world.blocks.units.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
+import gas.world.blocks.heat.*;
 import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.entities.bullet.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -29,11 +30,11 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import mindustry.ui.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
-import gas.world.blocks.*;
 import arc.scene.ui.layout.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
@@ -45,23 +46,23 @@ import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
-import mindustry.entities.bullet.*;
+import gas.world.blocks.*;
 import gas.*;
 import gas.io.*;
-import mindustry.ui.*;
-import mindustry.world.blocks.units.*;
+import gas.world.draw.*;
+import mindustry.world.blocks.defense.*;
+import gas.gen.*;
 import mindustry.world.blocks.defense.turrets.Turret.*;
-import gas.content.*;
+import gas.world.blocks.defense.*;
 import gas.world.blocks.storage.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import arc.util.io.*;
-import mindustry.world.blocks.defense.*;
+import arc.scene.ui.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.type.*;
 import mindustry.world.blocks.sandbox.*;
@@ -87,7 +88,7 @@ public class GasItemTurret extends GasTurret {
      * Makes copies of all bullets and limits their range.
      */
     public void limitRange() {
-        limitRange(1f);
+        limitRange(9f);
     }
 
     /**
@@ -95,9 +96,10 @@ public class GasItemTurret extends GasTurret {
      */
     public void limitRange(float margin) {
         for (var entry : ammoTypes.copy().entries()) {
-            var copy = entry.value.copy();
-            copy.lifetime = (range + margin) / copy.speed;
-            ammoTypes.put(entry.key, copy);
+            var bullet = entry.value;
+            float realRange = bullet.rangeChange + range;
+            // doesn't handle drag
+            bullet.lifetime = (realRange + margin) / bullet.speed;
         }
     }
 
@@ -110,19 +112,19 @@ public class GasItemTurret extends GasTurret {
 
     @Override
     public void init() {
-        consumes.add(new ConsumeItemFilter(i -> ammoTypes.containsKey(i)) {
+        consume(new ConsumeItemFilter(i -> ammoTypes.containsKey(i)) {
 
             @Override
-            public void build(Building tile, Table table) {
+            public void build(Building build, Table table) {
                 MultiReqImage image = new MultiReqImage();
-                content.items().each(i -> filter.get(i) && i.unlockedNow(), item -> image.add(new ReqImage(new ItemImage(item.uiIcon), () -> tile instanceof GasItemTurretBuild it && !it.ammo.isEmpty() && ((GasItemEntry) it.ammo.peek()).item == item)));
+                content.items().each(i -> filter.get(i) && i.unlockedNow(), item -> image.add(new ReqImage(new Image(item.uiIcon), () -> build instanceof GasItemTurretBuild it && !it.ammo.isEmpty() && ((GasItemEntry) it.ammo.peek()).item == item)));
                 table.add(image).size(8 * 4);
             }
 
             @Override
-            public boolean valid(Building entity) {
+            public float efficiency(Building build) {
                 // valid when there's any ammo in the turret
-                return entity instanceof GasItemTurretBuild it && !it.ammo.isEmpty();
+                return build instanceof GasItemTurretBuild it && !it.ammo.isEmpty() ? 1f : 0f;
             }
 
             @Override
@@ -180,6 +182,7 @@ public class GasItemTurret extends GasTurret {
 
         @Override
         public void handleItem(Building source, Item item) {
+            // TODO instead of all this "entry" crap, turrets could just accept only one type of ammo at a time - simpler for both users and the code
             if (item == Items.pyratite) {
                 Events.fire(Trigger.flameAmmo);
             }
@@ -242,7 +245,7 @@ public class GasItemTurret extends GasTurret {
 
     public class GasItemEntry extends AmmoEntry {
 
-        protected Item item;
+        public Item item;
 
         GasItemEntry(Item item, int amount) {
             this.item = item;
@@ -252,6 +255,11 @@ public class GasItemTurret extends GasTurret {
         @Override
         public BulletType type() {
             return ammoTypes.get(item);
+        }
+
+        @Override
+        public String toString() {
+            return "ItemEntry{" + "item=" + item + ", amount=" + amount + '}';
         }
     }
 }

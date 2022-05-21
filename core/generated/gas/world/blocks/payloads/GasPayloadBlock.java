@@ -3,24 +3,24 @@ package gas.world.blocks.payloads;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
+import gas.io.*;
 import gas.world.meta.*;
-import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -28,9 +28,10 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -41,23 +42,22 @@ import gas.world.consumers.*;
 import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import arc.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
 import gas.*;
-import gas.io.*;
-import gas.world.blocks.payloads.*;
+import arc.graphics.g2d.*;
+import gas.world.draw.*;
 import mindustry.world.blocks.payloads.PayloadBlock.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 import static mindustry.Vars.*;
@@ -66,21 +66,24 @@ public class GasPayloadBlock extends GasBlock {
 
     public float payloadSpeed = 0.7f, payloadRotateSpeed = 5f;
 
-    @Load(value = "@-top", fallback = "factory-top-@size")
-    public TextureRegion topRegion;
+    public String regionSuffix = "";
 
-    @Load(value = "@-out", fallback = "factory-out-@size")
-    public TextureRegion outRegion;
-
-    @Load(value = "@-in", fallback = "factory-in-@size")
-    public TextureRegion inRegion;
+    public TextureRegion topRegion, outRegion, inRegion;
 
     public GasPayloadBlock(String name) {
         super(name);
         update = true;
         sync = true;
         group = BlockGroup.payloads;
-        envEnabled |= Env.space;
+        envEnabled |= Env.space | Env.underwater;
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        topRegion = Core.atlas.find(name + "-top", "factory-top-" + size + regionSuffix);
+        outRegion = Core.atlas.find(name + "-out", "factory-out-" + size + regionSuffix);
+        inRegion = Core.atlas.find(name + "-in", "factory-in-" + size + regionSuffix);
     }
 
     public static boolean blends(Building build, int direction) {
@@ -129,8 +132,8 @@ public class GasPayloadBlock extends GasBlock {
         }
 
         @Override
-        public boolean canControlSelect(Unit player) {
-            return !player.spawnedByCore && this.payload == null && acceptUnitPayload(player) && player.tileOn() != null && player.tileOn().build == this;
+        public boolean canControlSelect(Unit unit) {
+            return !unit.spawnedByCore && unit.type.allowedInPayloads && this.payload == null && acceptUnitPayload(unit) && unit.tileOn() != null && unit.tileOn().build == this;
         }
 
         @Override
@@ -183,6 +186,13 @@ public class GasPayloadBlock extends GasBlock {
                 payload.dump();
         }
 
+        @Override
+        public void updateTile() {
+            if (payload != null) {
+                payload.update(null, this);
+            }
+        }
+
         public boolean blends(int direction) {
             return GasPayloadBlock.blends(this, direction);
         }
@@ -208,7 +218,7 @@ public class GasPayloadBlock extends GasBlock {
                 return false;
             updatePayload();
             if (rotate) {
-                payRotation = Angles.moveToward(payRotation, rotate ? rotdeg() : 90f, payloadRotateSpeed * edelta());
+                payRotation = Angles.moveToward(payRotation, block.rotate ? rotdeg() : 90f, payloadRotateSpeed * delta());
             }
             payVector.approach(Vec2.ZERO, payloadSpeed * delta());
             return hasArrived();
@@ -219,7 +229,7 @@ public class GasPayloadBlock extends GasBlock {
                 return;
             updatePayload();
             Vec2 dest = Tmp.v1.trns(rotdeg(), size * tilesize / 2f);
-            payRotation = Angles.moveToward(payRotation, rotdeg(), payloadRotateSpeed * edelta());
+            payRotation = Angles.moveToward(payRotation, rotdeg(), payloadRotateSpeed * delta());
             payVector.approach(dest, payloadSpeed * delta());
             Building front = front();
             boolean canDump = front == null || !front.tile().solid();

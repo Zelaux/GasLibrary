@@ -52,8 +52,11 @@ public class SmartTypeReplacer{
             for(ClassOrInterfaceDeclaration other : declaration.findAll(ClassOrInterfaceDeclaration.class)){
                 validNames.add(transform.type(other.getNameAsString()));
             }
-            if (className.equals("GasImpactReactor")){
+            if(className.equals("GasImpactReactor")){
                 validNames.add("GasGeneratorBuild");
+            }
+            if(className.equals("GasUnitAssemblerModule")){
+                validNames.add("GasUnitAssemblerBuild");
             }
             declaration.accept(new TypeTransformVisitor<>(transform){
                 @Override

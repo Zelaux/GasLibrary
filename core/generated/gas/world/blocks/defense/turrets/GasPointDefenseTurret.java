@@ -5,25 +5,25 @@ import mindustry.entities.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -31,10 +31,10 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import arc.audio.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -47,22 +47,22 @@ import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.graphics.g2d.*;
 import mindustry.world.blocks.defense.turrets.PointDefenseTurret.*;
-import mindustry.world.consumers.*;
+import arc.audio.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import mindustry.world.blocks.defense.turrets.Turret.*;
-import gas.content.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 
@@ -72,7 +72,7 @@ public class GasPointDefenseTurret extends GasReloadTurret {
 
     public float retargetTime = 5f;
 
-    @Load("block-@size")
+    @Load(value = "@-base", fallback = "block-@size")
     public TextureRegion baseRegion;
 
     public Color color = Color.white;
@@ -94,10 +94,8 @@ public class GasPointDefenseTurret extends GasReloadTurret {
     public GasPointDefenseTurret(String name) {
         super(name);
         rotateSpeed = 20f;
-        reloadTime = 30f;
+        reload = 30f;
         coolantMultiplier = 2f;
-        // disabled due to version mismatch problems
-        acceptCoolant = false;
     }
 
     @Override
@@ -108,7 +106,7 @@ public class GasPointDefenseTurret extends GasReloadTurret {
     @Override
     public void setStats() {
         super.setStats();
-        stats.add(Stat.reload, 60f / reloadTime, StatUnit.perSecond);
+        stats.add(Stat.reload, 60f / reload, StatUnit.perSecond);
     }
 
     public class GasPointDefenseBuild extends GasReloadTurretBuild {
@@ -126,16 +124,16 @@ public class GasPointDefenseTurret extends GasReloadTurret {
             if (target != null && !target.isAdded()) {
                 target = null;
             }
-            if (acceptCoolant) {
+            if (coolant != null) {
                 updateCooling();
             }
             // look at target
             if (target != null && target.within(this, range) && target.team != team && target.type() != null && target.type().hittable) {
                 float dest = angleTo(target);
                 rotation = Angles.moveToward(rotation, dest, rotateSpeed * edelta());
-                reload += edelta();
+                reloadCounter += edelta();
                 // shoot when possible
-                if (Angles.within(rotation, dest, shootCone) && reload >= reloadTime) {
+                if (Angles.within(rotation, dest, shootCone) && reloadCounter >= reload) {
                     if (target.damage() > bulletDamage) {
                         target.damage(target.damage() - bulletDamage);
                     } else {
@@ -146,9 +144,14 @@ public class GasPointDefenseTurret extends GasReloadTurret {
                     shootEffect.at(x + Tmp.v1.x, y + Tmp.v1.y, rotation, color);
                     hitEffect.at(target.x, target.y, color);
                     shootSound.at(x + Tmp.v1.x, y + Tmp.v1.y, Mathf.random(0.9f, 1.1f));
-                    reload = 0;
+                    reloadCounter = 0;
                 }
             }
+        }
+
+        @Override
+        public boolean shouldConsume() {
+            return super.shouldConsume() && target != null;
         }
 
         @Override

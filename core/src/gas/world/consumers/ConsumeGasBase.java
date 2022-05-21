@@ -1,20 +1,22 @@
 package gas.world.consumers;
 
-import gas.gen.GasBuilding;
-import mindustry.world.consumers.ConsumeType;
+import mindustry.world.*;
 
-public abstract class ConsumeGasBase extends GasConsume {
-    public final float amount;
+public abstract class ConsumeGasBase extends GasConsume{
+    /** amount used per frame */
+    public float amount;
 
-    public ConsumeGasBase(float amount) {
+    public ConsumeGasBase(float amount){
         this.amount = amount;
     }
 
-    public ConsumeType type() {
-        return null;
+    public ConsumeGasBase(){
     }
 
-    protected float use(GasBuilding entity) {
-        return Math.min(this.amount * entity.edelta(), entity.block.gasCapacity);
+    @Override
+    public void apply(Block b){
+        var block = expectGasBlock(b);
+        block.hasLiquids = true;
+
     }
 }

@@ -44,10 +44,6 @@ public class GasBulletType extends BulletType {
     public boolean explodes(Gas gas, float amount){
         return false;
     }
-    @Override
-    public float range(){
-        return speed * lifetime / 2f;
-    }
 
     @Override
     public void update(Bullet b){

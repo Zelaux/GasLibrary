@@ -15,7 +15,7 @@ public class GasRouter extends GasGasBlock {
 
         @Override
         public void updateTile() {
-            if (gasses.total() > 0.01f) {
+            if (gasses.currentAmount() > 0.01f) {
                 dumpGas(gasses.current());
             }
         }

@@ -3,37 +3,38 @@ package gas.world.blocks.defense;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.experimental.*;
+import gas.io.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
+import mindustry.world.blocks.defense.OverdriveProjector.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
-import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -41,26 +42,25 @@ import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import gas.world.consumers.*;
-import arc.graphics.g2d.*;
+import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
-import gas.io.*;
+import arc.graphics.g2d.*;
 import mindustry.ui.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
-import mindustry.world.blocks.defense.OverdriveProjector.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
@@ -132,7 +132,7 @@ public class GasOverdriveProjector extends GasBlock {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("boost", (GasOverdriveBuild entity) -> new Bar(() -> Core.bundle.format("bar.boost", Math.max((int) (entity.realBoost() * 100 - 100), 0)), () -> Pal.accent, () -> entity.realBoost() / (hasBoost ? speedBoost + speedBoostPhase : speedBoost)));
+        addBar("boost", (GasOverdriveBuild entity) -> new Bar(() -> Core.bundle.format("bar.boost", Mathf.round(Math.max((entity.realBoost() * 100 - 100), 0))), () -> Pal.accent, () -> entity.realBoost() / (hasBoost ? speedBoost + speedBoostPhase : speedBoost)));
     }
 
     public class GasOverdriveBuild extends GasBuilding implements Ranged {
@@ -152,29 +152,29 @@ public class GasOverdriveProjector extends GasBlock {
 
         @Override
         public void drawLight() {
-            Drawf.light(team, x, y, lightRadius * smoothEfficiency, baseColor, 0.7f * smoothEfficiency);
+            Drawf.light(x, y, lightRadius * smoothEfficiency, baseColor, 0.7f * smoothEfficiency);
         }
 
         @Override
         public void updateTile() {
-            smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, efficiency(), 0.08f);
-            heat = Mathf.lerpDelta(heat, consValid() ? 1f : 0f, 0.08f);
+            smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, efficiency, 0.08f);
+            heat = Mathf.lerpDelta(heat, efficiency > 0 ? 1f : 0f, 0.08f);
             charge += heat * Time.delta;
             if (hasBoost) {
-                phaseHeat = Mathf.lerpDelta(phaseHeat, Mathf.num(cons.optionalValid()), 0.1f);
+                phaseHeat = Mathf.lerpDelta(phaseHeat, optionalEfficiency, 0.1f);
             }
             if (charge >= reload) {
                 float realRange = range + phaseHeat * phaseRangeBoost;
                 charge = 0f;
-                indexer.eachBlock(this, realRange, other -> true, other -> other.applyBoost(realBoost(), reload + 1f));
+                indexer.eachBlock(this, realRange, other -> other.block.canOverdrive, other -> other.applyBoost(realBoost(), reload + 1f));
             }
-            if (timer(timerUse, useTime) && efficiency() > 0 && consValid()) {
+            if (timer(timerUse, useTime) && efficiency > 0) {
                 consume();
             }
         }
 
         public float realBoost() {
-            return consValid() ? (speedBoost + phaseHeat * speedBoostPhase) * efficiency() : 0f;
+            return (speedBoost + phaseHeat * speedBoostPhase) * efficiency;
         }
 
         @Override
@@ -189,7 +189,7 @@ public class GasOverdriveProjector extends GasBlock {
             super.draw();
             float f = 1f - (Time.time / 100f) % 1f;
             Draw.color(baseColor, phaseColor, phaseHeat);
-            Draw.alpha(heat * Mathf.absin(Time.time, 10f, 1f) * 0.5f);
+            Draw.alpha(heat * Mathf.absin(Time.time, 50f / Mathf.PI2, 1f) * 0.5f);
             Draw.rect(topRegion, x, y);
             Draw.alpha(1f);
             Lines.stroke((2f * f + 0.1f) * heat);

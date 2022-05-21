@@ -3,25 +3,25 @@ package gas.world.blocks.production;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
-import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
-import arc.*;
+import gas.content.*;
+import mindustry.type.*;
+import gas.world.blocks.payloads.*;
 import gas.world.meta.*;
 import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.payloads.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -30,35 +30,35 @@ import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
 import gas.world.blocks.defense.turrets.*;
-import gas.gen.*;
+import gas.world.blocks.distribution.*;
 import gas.world.*;
-import mindustry.type.*;
+import mindustry.world.consumers.*;
+import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.gas.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import gas.world.consumers.*;
-import mindustry.world.blocks.payloads.*;
+import arc.graphics.g2d.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import arc.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.world.draw.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import mindustry.world.blocks.production.Separator.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
@@ -67,6 +67,9 @@ import mindustry.world.blocks.sandbox.*;
  * Extracts a random list of items from an input item and an input liquid.
  */
 public class GasSeparator extends GasBlock {
+
+    @Nullable
+    protected ConsumeItems consItems;
 
     public ItemStack[] results;
 
@@ -97,6 +100,12 @@ public class GasSeparator extends GasBlock {
         stats.add(Stat.productionTime, craftTime / 60f, StatUnit.seconds);
     }
 
+    @Override
+    public void init() {
+        super.init();
+        consItems = findConsumer(c -> c instanceof ConsumeItems);
+    }
+
     public class GasSeparatorBuild extends GasBuilding {
 
         public float progress;
@@ -114,16 +123,15 @@ public class GasSeparator extends GasBlock {
 
         @Override
         public boolean shouldAmbientSound() {
-            return cons.valid();
+            return efficiency > 0;
         }
 
         @Override
         public boolean shouldConsume() {
             int total = items.total();
             // very inefficient way of allowing separators to ignore input buffer storage
-            if (consumes.has(ConsumeType.item) && consumes.get(ConsumeType.item) instanceof ConsumeItems) {
-                ConsumeItems c = consumes.get(ConsumeType.item);
-                for (var stack : c.items) {
+            if (consItems != null) {
+                for (var stack : consItems.items) {
                     total -= items.get(stack.item);
                 }
             }
@@ -133,7 +141,7 @@ public class GasSeparator extends GasBlock {
         @Override
         public void draw() {
             super.draw();
-            Drawf.liquid(liquidRegion, x, y, liquids.total() / liquidCapacity, liquids.current().color);
+            Drawf.liquid(liquidRegion, x, y, liquids.currentAmount() / liquidCapacity, liquids.current().color);
             if (Core.atlas.isFound(spinnerRegion)) {
                 Draw.rect(spinnerRegion, x, y, totalProgress * spinnerSpeed);
             }
@@ -142,7 +150,7 @@ public class GasSeparator extends GasBlock {
         @Override
         public void updateTile() {
             totalProgress += warmup * delta();
-            if (consValid()) {
+            if (efficiency > 0) {
                 progress += getProgressIncrease(craftTime);
                 warmup = Mathf.lerpDelta(warmup, 1f, 0.02f);
             } else {
@@ -152,7 +160,7 @@ public class GasSeparator extends GasBlock {
                 progress %= 1f;
                 int sum = 0;
                 for (var stack : results) sum += stack.amount;
-                int i = Mathf.randomSeed(seed++, 0, sum);
+                int i = Mathf.randomSeed(seed++, 0, sum - 1);
                 int count = 0;
                 Item item = null;
                 // guaranteed desync since items are random - won't be fixed and probably isn't too important
@@ -182,7 +190,7 @@ public class GasSeparator extends GasBlock {
 
         @Override
         public boolean canDump(Building to, Item item) {
-            return !consumes.itemFilters.get(item.id);
+            return !consumesItem(item);
         }
 
         @Override

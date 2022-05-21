@@ -6,69 +6,69 @@ import mindustry.entities.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
 import gas.world.meta.*;
-import mindustry.ui.*;
+import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
-import gas.world.blocks.power.*;
+import mindustry.world.blocks.payloads.*;
+import mindustry.world.blocks.distribution.*;
+import gas.world.blocks.payloads.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
+import arc.struct.*;
 import mindustry.game.*;
 import gas.entities.*;
-import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
+import gas.world.consumers.*;
 import arc.graphics.g2d.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
-import mindustry.annotations.Annotations.*;
+import arc.graphics.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import mindustry.ui.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import mindustry.world.blocks.production.Drill.*;
-import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.type.*;
 import mindustry.world.blocks.sandbox.*;
-import gas.world.consumers.*;
+import gas.world.blocks.power.*;
 import static mindustry.Vars.*;
 
 public class GasDrill extends GasBlock {
@@ -98,6 +98,12 @@ public class GasDrill extends GasBlock {
      * Speed at which the drill speeds up.
      */
     public float warmupSpeed = 0.015f;
+
+    /**
+     * Special exemption item that this drill can't mine.
+     */
+    @Nullable
+    public Item blockedItem;
 
     // return variables for countOre
     @Nullable
@@ -163,6 +169,8 @@ public class GasDrill extends GasBlock {
         hasItems = true;
         ambientSound = Sounds.drill;
         ambientSoundVolume = 0.018f;
+        // drills work in space I guess
+        envEnabled |= Env.space;
     }
 
     @Override
@@ -173,24 +181,24 @@ public class GasDrill extends GasBlock {
     }
 
     @Override
-    public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list) {
-        if (!req.worldContext)
+    public void drawPlanConfigTop(BuildPlan plan, Eachable<BuildPlan> list) {
+        if (!plan.worldContext)
             return;
-        Tile tile = req.tile();
+        Tile tile = plan.tile();
         if (tile == null)
             return;
         countOre(tile);
         if (returnItem == null || !drawMineItem)
             return;
         Draw.color(returnItem.color);
-        Draw.rect(itemRegion, req.drawx(), req.drawy());
+        Draw.rect(itemRegion, plan.drawx(), plan.drawy());
         Draw.color();
     }
 
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("drillspeed", (GasDrillBuild e) -> new Bar(() -> Core.bundle.format("bar.drillspeed", Strings.fixed(e.lastDrillSpeed * 60 * e.timeScale, 2)), () -> Pal.ammo, () -> e.warmup));
+        addBar("drillspeed", (GasDrillBuild e) -> new Bar(() -> Core.bundle.format("bar.drillspeed", Strings.fixed(e.lastDrillSpeed * 60 * e.timeScale(), 2)), () -> Pal.ammo, () -> e.warmup));
     }
 
     public Item getDrop(Tile tile) {
@@ -231,7 +239,7 @@ public class GasDrill extends GasBlock {
                 Draw.color();
             }
         } else {
-            Tile to = tile.getLinkedTilesAs(this, tempTiles).find(t -> t.drop() != null && t.drop().hardness > tier);
+            Tile to = tile.getLinkedTilesAs(this, tempTiles).find(t -> t.drop() != null && (t.drop().hardness > tier || t.drop() == blockedItem));
             Item item = to == null ? null : to.drop();
             if (item != null) {
                 drawPlaceText(Core.bundle.get("bar.drilltierreq"), x, y, valid);
@@ -242,7 +250,7 @@ public class GasDrill extends GasBlock {
     @Override
     public void setStats() {
         super.setStats();
-        stats.add(Stat.drillTier, StatValues.blocks(b -> b instanceof Floor f && f.itemDrop != null && f.itemDrop.hardness <= tier));
+        stats.add(Stat.drillTier, StatValues.blocks(b -> b instanceof Floor f && !f.wallOre && f.itemDrop != null && f.itemDrop.hardness <= tier && f.itemDrop != blockedItem));
         stats.add(Stat.drillSpeed, 60f / drillTime * size * size, StatUnit.itemsSecond);
         if (liquidBoostIntensity != 1) {
             stats.add(Stat.boostEffect, liquidBoostIntensity * liquidBoostIntensity, StatUnit.timesSpeed);
@@ -254,7 +262,7 @@ public class GasDrill extends GasBlock {
         return new TextureRegion[] { region, rotatorRegion, topRegion };
     }
 
-    void countOre(Tile tile) {
+    protected void countOre(Tile tile) {
         returnItem = null;
         returnCount = 0;
         oreCount.clear();
@@ -287,7 +295,7 @@ public class GasDrill extends GasBlock {
         if (tile == null || tile.block().isStatic())
             return false;
         Item drops = tile.drop();
-        return drops != null && drops.hardness <= tier;
+        return drops != null && drops.hardness <= tier && drops != blockedItem;
     }
 
     public class GasDrillBuild extends GasBuilding {
@@ -311,12 +319,12 @@ public class GasDrill extends GasBlock {
 
         @Override
         public boolean shouldAmbientSound() {
-            return efficiency() > 0.01f && items.total() < itemCapacity;
+            return efficiency > 0.01f && items.total() < itemCapacity;
         }
 
         @Override
         public float ambientVolume() {
-            return efficiency() * (size * size) / 4f;
+            return efficiency * (size * size) / 4f;
         }
 
         @Override
@@ -328,6 +336,11 @@ public class GasDrill extends GasBlock {
                 Draw.reset();
                 Draw.rect(dominantItem.fullIcon, dx, dy, s, s);
             }
+        }
+
+        @Override
+        public void pickedUp() {
+            dominantItem = null;
         }
 
         @Override
@@ -347,13 +360,8 @@ public class GasDrill extends GasBlock {
                 dump(items.has(dominantItem) ? dominantItem : null);
             }
             timeDrilled += warmup * delta();
-            if (items.total() < itemCapacity && dominantItems > 0 && consValid()) {
-                float speed = 1f;
-                if (cons.optionalValid()) {
-                    speed = liquidBoostIntensity;
-                }
-                // Drill slower when not at full power
-                speed *= efficiency();
+            if (items.total() < itemCapacity && dominantItems > 0 && efficiency > 0) {
+                float speed = Mathf.lerp(1f, liquidBoostIntensity, optionalEfficiency) * efficiency;
                 lastDrillSpeed = (speed * dominantItems * warmup) / (drillTime + hardnessDrillMultiplier * dominantItem.hardness);
                 warmup = Mathf.approachDelta(warmup, speed, warmupSpeed);
                 progress += delta() * dominantItems * speed * warmup;
@@ -368,7 +376,8 @@ public class GasDrill extends GasBlock {
             if (dominantItems > 0 && progress >= delay && items.total() < itemCapacity) {
                 offload(dominantItem);
                 progress %= delay;
-                drillEffect.at(x + Mathf.range(drillEffectRnd), y + Mathf.range(drillEffectRnd), dominantItem.color);
+                if (wasVisible)
+                    drillEffect.at(x + Mathf.range(drillEffectRnd), y + Mathf.range(drillEffectRnd), dominantItem.color);
             }
         }
 
@@ -383,12 +392,18 @@ public class GasDrill extends GasBlock {
         public void drawCracks() {
         }
 
+        public void drawDefaultCracks() {
+            super.drawCracks();
+        }
+
         @Override
         public void draw() {
             float s = 0.3f;
             float ts = 0.6f;
             Draw.rect(region, x, y);
-            super.drawCracks();
+            Draw.z(Layer.blockCracks);
+            drawDefaultCracks();
+            Draw.z(Layer.blockAfterCracks);
             if (drawRim) {
                 Draw.color(heatColor);
                 Draw.alpha(warmup * ts * (1f - s + Mathf.absin(Time.time, 3f, s)));

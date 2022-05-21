@@ -1,49 +1,50 @@
 package gas.world.blocks.campaign;
 
+import mindustry.annotations.Annotations.*;
+import mindustry.logic.*;
 import gas.entities.comp.*;
 import arc.scene.ui.layout.*;
 import mindustry.entities.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
-import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.content.*;
+import mindustry.type.*;
 import gas.io.*;
+import mindustry.world.blocks.defense.turrets.*;
 import gas.world.meta.*;
 import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import arc.Graphics.*;
-import arc.Graphics.Cursor.*;
-import gas.world.blocks.defense.*;
-import arc.util.*;
+import mindustry.world.blocks.heat.*;
+import arc.audio.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import arc.*;
 import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
-import mindustry.game.EventType.*;
-import gas.world.blocks.liquid.*;
 import mindustry.world.blocks.storage.*;
+import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import arc.audio.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
+import mindustry.world.modules.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
-import mindustry.world.modules.*;
+import arc.Graphics.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import mindustry.world.blocks.campaign.LaunchPad.*;
@@ -51,27 +52,26 @@ import gas.world.consumers.*;
 import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import arc.*;
-import mindustry.world.consumers.*;
+import arc.graphics.g2d.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
-import mindustry.annotations.Annotations.*;
+import arc.graphics.*;
 import gas.*;
-import arc.graphics.g2d.*;
+import mindustry.game.EventType.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
-import gas.world.blocks.production.*;
+import arc.util.*;
 import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
+import gas.world.blocks.production.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
-import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
-import mindustry.type.*;
+import arc.Graphics.Cursor.*;
 import mindustry.world.blocks.sandbox.*;
 import static mindustry.Vars.*;
 
@@ -110,7 +110,9 @@ public class GasLaunchPad extends GasBlock {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("items", entity -> new Bar(() -> Core.bundle.format("bar.items", entity.items.total()), () -> Pal.items, () -> (float) entity.items.total() / itemCapacity));
+        addBar("items", entity -> new Bar(() -> Core.bundle.format("bar.items", entity.items.total()), () -> Pal.items, () -> (float) entity.items.total() / itemCapacity));
+        // TODO is "bar.launchcooldown" the right terminology?
+        addBar("progress", (GasLaunchPadBuild build) -> new Bar(() -> Core.bundle.get("bar.launchcooldown"), () -> Pal.ammo, () -> Mathf.clamp(build.launchCounter / launchTime)));
     }
 
     @Override
@@ -129,7 +131,8 @@ public class GasLaunchPad extends GasBlock {
 
         @Override
         public boolean shouldConsume() {
-            return true;
+            // TODO add launch costs, maybe legacy version
+            return launchCounter < launchTime;
         }
 
         @Override
@@ -173,7 +176,9 @@ public class GasLaunchPad extends GasBlock {
             if (!state.isCampaign())
                 return;
             // increment launchCounter then launch when full and base conditions are met
-            if ((launchCounter += edelta()) >= launchTime && edelta() >= 0.001f && items.total() >= itemCapacity) {
+            if ((launchCounter += edelta()) >= launchTime && items.total() >= itemCapacity) {
+                // if there are item requirements, use those.
+                consume();
                 launchSound.at(x, y);
                 LaunchPayload entity = LaunchPayload.create();
                 items.each((item, amount) -> entity.stacks.add(new ItemStack(item, amount)));
@@ -206,9 +211,9 @@ public class GasLaunchPad extends GasBlock {
                 deselect();
                 return;
             }
-            table.button(Icon.upOpen, Styles.clearTransi, () -> {
+            table.button(Icon.upOpen, Styles.cleari, () -> {
                 ui.planet.showSelect(state.rules.sector, other -> {
-                    if (state.isCampaign()) {
+                    if (state.isCampaign() && other.planet == state.rules.sector.planet) {
                         state.rules.sector.info.destination = other;
                     }
                 });

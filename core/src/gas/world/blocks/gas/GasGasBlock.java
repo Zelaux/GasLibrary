@@ -37,8 +37,9 @@ public class GasGasBlock extends GasBlock {
         public void draw() {
             float rotation = rotate ? rotdeg() : 0;
             Draw.rect(bottomRegion, x, y, rotation);
-            if (gasses.total() > 0.001f) {
-                Drawf.liquid(gasRegion, x, y, gasses.total() / gasCapacity, gasses.current().color);
+//            liquids.currentAmount()
+            if (gasses.currentAmount() > 0.001f) {
+                Drawf.liquid(gasRegion, x, y, gasses.currentAmount() / gasCapacity, gasses.current().color);
             }
             Draw.rect(topRegion, x, y, rotation);
         }

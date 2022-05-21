@@ -4,25 +4,24 @@ import mindustry.entities.units.*;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.experimental.*;
 import gas.world.meta.*;
-import mindustry.annotations.Annotations.*;
+import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -30,9 +29,10 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
@@ -43,21 +43,21 @@ import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
-import mindustry.world.blocks.power.PowerDiode.*;
+import mindustry.annotations.Annotations.*;
 import gas.*;
 import gas.io.*;
-import mindustry.ui.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.world.draw.*;
+import mindustry.world.blocks.power.PowerDiode.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import mindustry.world.blocks.sandbox.*;
 
@@ -81,14 +81,14 @@ public class GasPowerDiode extends GasBlock {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("back", entity -> new Bar("bar.input", Pal.powerBar, () -> bar(entity.back())));
-        bars.add("front", entity -> new Bar("bar.output", Pal.powerBar, () -> bar(entity.front())));
+        addBar("back", entity -> new Bar("bar.input", Pal.powerBar, () -> bar(entity.back())));
+        addBar("front", entity -> new Bar("bar.output", Pal.powerBar, () -> bar(entity.front())));
     }
 
     @Override
-    public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        Draw.rect(fullIcon, req.drawx(), req.drawy());
-        Draw.rect(arrow, req.drawx(), req.drawy(), !rotate ? 0 : req.rotation * 90);
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        Draw.rect(fullIcon, plan.drawx(), plan.drawy());
+        Draw.rect(arrow, plan.drawx(), plan.drawy(), !rotate ? 0 : plan.rotation * 90);
     }
 
     // battery % of the graph on either side, defaults to zero
@@ -107,7 +107,7 @@ public class GasPowerDiode extends GasBlock {
         @Override
         public void updateTile() {
             super.updateTile();
-            if (front() == null || back() == null || !back().block.hasPower || !front().block.hasPower || back().team != front().team)
+            if (tile == null || front() == null || back() == null || !back().block.hasPower || !front().block.hasPower || back().team != front().team)
                 return;
             PowerGraph backGraph = back().power.graph;
             PowerGraph frontGraph = front().power.graph;

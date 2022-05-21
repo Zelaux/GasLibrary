@@ -20,7 +20,7 @@ public class GasVoid extends GasBlock {
     @Override
     public void setBars(){
         super.setBars();
-        bars.remove("gas");
+        removeBar("gas");
     }
     public class GasVoidBuild extends GasBuilding {
         @Override

@@ -1,44 +1,44 @@
 package gas.world.blocks.power;
 
+import mindustry.annotations.Annotations.*;
+import mindustry.logic.*;
 import gas.entities.comp.*;
 import mindustry.entities.*;
 import gas.type.*;
-import arc.math.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
-import gas.io.*;
+import gas.world.blocks.payloads.*;
+import arc.*;
 import gas.world.meta.*;
-import mindustry.annotations.Annotations.*;
+import mindustry.game.EventType.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
-import mindustry.world.blocks.units.*;
-import mindustry.world.blocks.liquid.*;
+import arc.math.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.liquid.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
-import mindustry.game.EventType.*;
-import gas.world.blocks.liquid.*;
 import mindustry.world.blocks.storage.*;
+import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.power.NuclearReactor.*;
 import mindustry.world.blocks.campaign.*;
 import gas.world.blocks.defense.turrets.*;
-import mindustry.ui.*;
+import gas.world.blocks.distribution.*;
 import gas.world.*;
-import mindustry.type.*;
+import mindustry.world.consumers.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -49,25 +49,25 @@ import gas.world.consumers.*;
 import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import arc.*;
-import mindustry.world.consumers.*;
+import arc.graphics.g2d.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
-import arc.graphics.g2d.*;
-import gas.world.blocks.payloads.*;
+import gas.io.*;
+import mindustry.ui.*;
 import gas.gen.*;
-import gas.content.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
-import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
+import mindustry.type.*;
 import mindustry.world.blocks.sandbox.*;
 import static mindustry.Vars.*;
 
@@ -114,6 +114,10 @@ public class GasNuclearReactor extends GasPowerGenerator {
      */
     public float coolantPower = 0.5f;
 
+    public float smoothLight;
+
+    public Item fuelItem = Items.thorium;
+
     @Load("@-top")
     public TextureRegion topRegion;
 
@@ -143,18 +147,18 @@ public class GasNuclearReactor extends GasPowerGenerator {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("heat", (GasNuclearReactorBuild entity) -> new Bar("bar.heat", Pal.lightOrange, () -> entity.heat));
+        addBar("heat", (GasNuclearReactorBuild entity) -> new Bar("bar.heat", Pal.lightOrange, () -> entity.heat));
     }
 
     public class GasNuclearReactorBuild extends GasGeneratorBuild {
 
         public float heat;
 
+        public float flash;
+
         @Override
         public void updateTile() {
-            ConsumeLiquid cliquid = consumes.get(ConsumeType.liquid);
-            Item item = consumes.getItem().items[0].item;
-            int fuel = items.get(item);
+            int fuel = items.get(fuelItem);
             float fullness = (float) fuel / itemCapacity;
             productionEfficiency = fullness;
             if (fuel > 0 && enabled) {
@@ -165,11 +169,10 @@ public class GasNuclearReactor extends GasPowerGenerator {
             } else {
                 productionEfficiency = 0f;
             }
-            Liquid liquid = cliquid.liquid;
             if (heat > 0) {
-                float maxUsed = Math.min(liquids.get(liquid), heat / coolantPower);
+                float maxUsed = Math.min(liquids.currentAmount(), heat / coolantPower);
                 heat -= maxUsed * coolantPower;
-                liquids.remove(liquid, maxUsed);
+                liquids.remove(liquids.current(), maxUsed);
             }
             if (heat > smokeThreshold) {
                 // ranges from 1.0 to 2.0
@@ -195,11 +198,12 @@ public class GasNuclearReactor extends GasPowerGenerator {
         @Override
         public void onDestroyed() {
             super.onDestroyed();
-            Sounds.explosionbig.at(tile);
-            int fuel = items.get(consumes.<ConsumeItems>get(ConsumeType.item).items[0].item);
+            Sounds.explosionbig.at(this);
+            int fuel = items.get(fuelItem);
             if ((fuel < 5 && heat < 0.5f) || !state.rules.reactorExplosions)
                 return;
             Effect.shake(6f, 16f, x, y);
+            // * ((float)fuel / itemCapacity) to scale based on fullness
             Damage.damage(x, y, explosionRadius * tilesize, explosionDamage * 4);
             explodeEffect.at(x, y);
         }
@@ -207,7 +211,8 @@ public class GasNuclearReactor extends GasPowerGenerator {
         @Override
         public void drawLight() {
             float fract = productionEfficiency;
-            Drawf.light(team, x, y, (90f + Mathf.absin(5, 5f)) * fract, Tmp.c1.set(lightColor).lerp(Color.scarlet, heat), 0.6f * fract);
+            smoothLight = Mathf.lerpDelta(smoothLight, fract, 0.08f);
+            Drawf.light(x, y, (90f + Mathf.absin(5, 5f)) * smoothLight, Tmp.c1.set(lightColor).lerp(Color.scarlet, heat), 0.6f * smoothLight);
         }
 
         @Override
@@ -219,10 +224,9 @@ public class GasNuclearReactor extends GasPowerGenerator {
             Draw.alpha(liquids.currentAmount() / liquidCapacity);
             Draw.rect(topRegion, x, y);
             if (heat > flashThreshold) {
-                float flash = 1f + ((heat - flashThreshold) / (1f - flashThreshold)) * 5.4f;
-                flash += flash * Time.delta;
+                flash += (1f + ((heat - flashThreshold) / (1f - flashThreshold)) * 5.4f) * Time.delta;
                 Draw.color(Color.red, Color.yellow, Mathf.absin(flash, 9f, 1f));
-                Draw.alpha(0.6f);
+                Draw.alpha(0.3f);
                 Draw.rect(lightsRegion, x, y);
             }
             Draw.reset();

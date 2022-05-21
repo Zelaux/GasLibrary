@@ -1,136 +1,43 @@
 package gas.gen;
 
-import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
-import gas.content.*;
+import arc.util.io.*;
 import gas.entities.*;
 import gas.type.*;
 import gas.world.*;
 import gas.world.modules.*;
 import mindustry.*;
-import mindustry.audio.*;
 import mindustry.content.*;
-import mindustry.core.*;
 import mindustry.ctype.*;
 import mindustry.entities.*;
 import mindustry.game.*;
 import mindustry.gen.*;
-import mindustry.graphics.*;
-import mindustry.logic.*;
 import mindustry.type.*;
 import mindustry.world.*;
-import mindustry.world.blocks.*;
-import mindustry.world.blocks.payloads.*;
-import mindustry.world.consumers.*;
 import mindustry.world.modules.*;
 
-import java.util.*;
-
-import static mindustry.Vars.tilesize;
+import static mindustry.Vars.*;
 
 public class GasBuilding extends Building{
     public GasModule gasses;
     public GasBlock block;
     public float smoothGas;
 
+    protected GasBuilding(){
+        block = (GasBlock)super.block;
+    }
+
     public void handleGas(Building source, Gas gas, float amount){
         gasses.add(gas, amount);
     }
 
     public boolean acceptGas(Building source, Gas gas){
-        if  (source instanceof GasBuilding || source == null){
-            return block.hasGasses && block.consumes.gasFilter.get(gas.id);
+        if(source instanceof GasBuilding || source == null){
+            return block.hasGasses && block.gasFilter[gas.id];
         }
         return false;
-    }
-
-
-    @Override
-    public boolean acceptItem(Building source, Item item){
-        return block.consumes.itemFilters.get(item.id) && items.get(item) < getMaximumAccepted(item);
-    }
-
-    @Override
-    public boolean acceptLiquid(Building source, Liquid liquid){
-        return block.hasLiquids && block.consumes.liquidfilters.get(liquid.id);
-    }
-
-    @Override
-    public boolean acceptPayload(Building source, Payload payload){
-        return super.acceptPayload(source, payload);
-    }
-
-    public double sense(LAccess sensor){
-        double var10000;
-        switch(sensor){
-            case x:
-                var10000 = World.conv(x);
-                break;
-            case y:
-                var10000 = World.conv(y);
-                break;
-            case team:
-                var10000 = team.id;
-                break;
-            case health:
-                var10000 = health;
-                break;
-            case maxHealth:
-                var10000 = maxHealth;
-                break;
-            case efficiency:
-                var10000 = efficiency();
-                break;
-            case rotation:
-                var10000 = rotation;
-                break;
-            case totalItems:
-                var10000 = items == null ? 0.0D : (double)items.total();
-                break;
-            case totalLiquids:
-                var10000 = liquids == null ? 0.0D : (double)liquids.total();
-                break;
-            case totalPower:
-                var10000 = power != null && block.consumes.hasPower() ? (double)(power.status * (block.consumes.getPower().buffered ? block.consumes.getPower().capacity : 1.0F)) : 0.0D;
-                break;
-            case itemCapacity:
-                var10000 = block.hasItems ? (double)block.itemCapacity : 0.0D;
-                break;
-            case liquidCapacity:
-                var10000 = block.hasLiquids ? (double)block.liquidCapacity : 0.0D;
-                break;
-            case powerCapacity:
-                var10000 = block.consumes.hasPower() ? (double)block.consumes.getPower().capacity : 0.0D;
-                break;
-            case powerNetIn:
-                var10000 = power == null ? 0.0D : (double)(power.graph.getLastScaledPowerIn() * 60.0F);
-                break;
-            case powerNetOut:
-                var10000 = power == null ? 0.0D : (double)(power.graph.getLastScaledPowerOut() * 60.0F);
-                break;
-            case powerNetStored:
-                var10000 = power == null ? 0.0D : (double)power.graph.getLastPowerStored();
-                break;
-            case powerNetCapacity:
-                var10000 = power == null ? 0.0D : (double)power.graph.getLastCapacity();
-                break;
-            case enabled:
-                var10000 = enabled ? 1.0D : 0.0D;
-                break;
-            case controlled:
-                ControlBlock c;
-                var10000 = (this instanceof ControlBlock && (c = (ControlBlock)this) == (ControlBlock)this ? (c.isControlled() ? 1 : 0) : 0);
-                break;
-            case payloadCount:
-                var10000 = getPayload() != null ? 1.0D : 0.0D;
-                break;
-            default:
-                var10000 = 0.0D;
-        }
-
-        return var10000;
     }
 
     public double sense(Content content){
@@ -146,25 +53,21 @@ public class GasBuilding extends Building{
     @Override
     public void onDestroyed(){
         float explosiveness = block.baseExplosiveness;
-        float flammability = 0.0F;
-        float power = 0.0F;
-        Item item;
-        int amount;
+        float flammability = 0f;
+        float power = 0f;
+
         if(block.hasItems){
-            for(Iterator<Item> var4 = Vars.content.items().iterator(); var4.hasNext(); flammability += item.flammability * (float)amount){
-                item = var4.next();
-                amount = items.get(item);
-                explosiveness += item.explosiveness * (float)amount;
+            for(Item item : content.items()){
+                int amount = Math.min(items.get(item), explosionItemCap());
+                explosiveness += item.explosiveness * amount;
+                flammability += item.flammability * amount;
+                power += item.charge * Mathf.pow(amount, 1.1f) * 150f;
             }
         }
 
         if(block.hasLiquids){
-            flammability += liquids.sum((liquid, amountx) -> {
-                return liquid.flammability * amountx / 2.0F;
-            });
-            explosiveness += liquids.sum((liquid, amountx) -> {
-                return liquid.explosiveness * amountx / 2.0F;
-            });
+            flammability += liquids.sum((liquid, amount) -> liquid.flammability * amount / 2f);
+            explosiveness += liquids.sum((liquid, amount) -> liquid.explosiveness * amount / 2f);
         }
 
         if(block.hasGasses){
@@ -175,24 +78,23 @@ public class GasBuilding extends Building{
                 return gas.explosiveness * amountx / 2.0F;
             });
         }
-
-        if(block.consumes.hasPower() && block.consumes.getPower().buffered){
-            power += this.power.status * block.consumes.getPower().capacity;
+        if(block.consPower != null && block.consPower.buffered){
+            power += this.power.status * block.consPower.capacity;
         }
 
-        if(block.hasLiquids && Vars.state.rules.damageExplosions){
-            liquids.each((liquid, amountx) -> {
-                float splash = Mathf.clamp(amountx / 4.0F, 0.0F, 10.0F);
-                for(int i = 0; (float)i < Mathf.clamp(amountx / 5.0F, 0.0F, 30.0F); ++i){
-                    Time.run((float)i / 2.0F, () -> {
-                        Tile other = Vars.world.tile(tileX() + Mathf.range(block.size / 2), tileY() + Mathf.range(block.size / 2));
+        if(block.hasLiquids && state.rules.damageExplosions){
+
+            liquids.each((liquid, amount) -> {
+                float splash = Mathf.clamp(amount / 4f, 0f, 10f);
+
+                for(int i = 0; i < Mathf.clamp(amount / 5, 0, 30); i++){
+                    Time.run(i / 2f, () -> {
+                        Tile other = world.tileWorld(x + Mathf.range(block.size * tilesize / 2), y + Mathf.range(block.size * tilesize / 2));
                         if(other != null){
                             Puddles.deposit(other, liquid, splash);
                         }
-
                     });
                 }
-
             });
         }
         if(block.hasGasses && Vars.state.rules.damageExplosions){
@@ -211,32 +113,10 @@ public class GasBuilding extends Building{
             });
         }
 
-        Damage.dynamicExplosion(x, y, flammability, explosiveness * 3.5F, power, (float)(8 * block.size) / 2.0F, Vars.state.rules.damageExplosions);
+        Damage.dynamicExplosion(x, y, flammability, explosiveness * 3.5f, power, tilesize * block.size / 2f, state.rules.damageExplosions, block.destroyEffect);
+
         if(!floor().solid && !floor().isLiquid){
             Effect.rubble(x, y, block.size);
-        }
-
-    }
-
-    public float efficiency(){
-        if(!enabled){
-            return 0.0F;
-        }else{
-            return power != null && block.consumes.has(ConsumeType.power) && !block.consumes.getPower().buffered ? power.status : 1.0F;
-        }
-    }
-
-    public void drawStatus(){
-        if(block.enableDrawStatus && block.consumes.any()){
-            float multiplier = block.size > 1 ? 1 : 0.64F;
-            float brcx = x + (block.size * tilesize / 2.0F) - (tilesize * multiplier / 2.0F);
-            float brcy = y - (block.size * tilesize / 2.0F) + (tilesize * multiplier / 2.0F);
-            Draw.z(Layer.power + 1);
-            Draw.color(Pal.gray);
-            Fill.square(brcx, brcy, 2.5F * multiplier, 45);
-            Draw.color(status().color);
-            Fill.square(brcx, brcy, 1.5F * multiplier, 45);
-            Draw.color();
         }
     }
 
@@ -267,15 +147,6 @@ public class GasBuilding extends Building{
     }
 
     @Override
-    public void displayConsumption(Table table){
-        table.left();
-        for(Consume cons : block.consumes.all()){
-            if(cons.isOptional() && cons.isBoost()) continue;
-            cons.build(this, table);
-        }
-    }
-
-    @Override
     public void displayBars(Table table){
         super.displayBars(table);
     }
@@ -291,26 +162,11 @@ public class GasBuilding extends Building{
     }
 
     public GasBuilding create(GasBlock block, Team team){
-        super.block = block;
-        this.block = block;
-        this.team = team;
-        if(block.loopSound != Sounds.none){
-            sound = new SoundLoop(block.loopSound, block.loopSoundVolume);
-        }
-        health = block.health;
-        maxHealth(block.health);
-        timer(new Interval(block.timers));
-        cons = new GasConsumeModule(this);
-        if(block.hasItems) items = new ItemModule();
-        if(block.hasLiquids) liquids = new LiquidModule();
-        if(block.hasPower){
-            power = new PowerModule();
-            power.graph.add(this);
-        }
+        super.create(block, team);
         if(block.hasGasses){
             gasses = new GasModule();
         }
-        initialized = true;
+        this.block=block;
         return this;
     }
 
@@ -385,22 +241,97 @@ public class GasBuilding extends Building{
         return 0f;
     }
 
-    @Override
-    public void updateTile(){
-    }
-
     public float moveGasForward(boolean leaks, Gas gas){
         Building next = front();
         Tile nextTile = tile.nearby(rotation);
         if((next instanceof GasBuilding)){
             return moveGas(next, gas);
         }
-        if(nextTile != null && leaks && !nextTile.block().solid && !(nextTile.block() instanceof GasBlock gasBlock && gasBlock.hasGasses) ){
+        if(nextTile != null && leaks && !nextTile.block().solid && !(nextTile.block() instanceof GasBlock gasBlock && gasBlock.hasGasses)){
             float leakAmount = gasses.get(gas) / 1.5F;
 
             Clouds.deposit(nextTile, tile, gas, leakAmount);
             gasses.remove(gas, leakAmount);
         }
         return 0.0F;
+    }
+
+    @Override
+    public final void writeBase(Writes write){
+        boolean writeVisibility = state.rules.fog && visibleFlags != 0;
+
+        write.f(health);
+        write.b(rotation | 0b10000000);
+        write.b(team.id);
+        write.b(writeVisibility ? 4 : 3); //version
+        write.b(enabled ? 1 : 0);
+        //write presence of items/power/liquids/cons, so removing/adding them does not corrupt future saves.
+        write.b(moduleBitmask());
+        if(items != null) items.write(write);
+        if(power != null) power.write(write);
+        if(liquids != null) liquids.write(write);
+        if(gasses != null) gasses.write(write);
+
+        //efficiency is written as two bytes to save space
+        write.b((byte)(Mathf.clamp(efficiency) * 255f));
+        write.b((byte)(Mathf.clamp(optionalEfficiency) * 255f));
+
+        //only write visibility when necessary, saving 8 bytes - implies new version
+        if(writeVisibility){
+            write.l(visibleFlags);
+        }
+    }
+
+    @Override
+    public final void readBase(Reads read){
+        //cap health by block health in case of nerfs
+        health = Math.min(read.f(), block.health);
+        byte rot = read.b();
+        team = Team.get(read.b());
+
+        rotation = rot & 0b01111111;
+
+        int moduleBits = moduleBitmask();
+        boolean legacy = true;
+        byte version = 0;
+
+        //new version
+        if((rot & 0b10000000) != 0){
+            version = read.b(); //version of entity save
+            if(version >= 1){
+                byte on = read.b();
+                this.enabled = on == 1;
+            }
+
+            //get which modules should actually be read; this was added in version 2
+            if(version >= 2){
+                moduleBits = read.b();
+            }
+            legacy = false;
+        }
+
+        if((moduleBits & 0b0001) != 0) (items == null ? new ItemModule() : items).read(read, legacy);
+        if((moduleBits & 0b0010) != 0) (power == null ? new PowerModule() : power).read(read, legacy);
+        if((moduleBits & 0b0100) != 0) (liquids == null ? new LiquidModule() : liquids).read(read, legacy);
+        if((moduleBits & 0b1000) != 0) (gasses == null ? new GasModule() : gasses).read(read, legacy);
+
+        //unnecessary consume module read in version 2 and below
+        if(version <= 2) read.bool();
+
+        //version 3 has efficiency numbers instead of bools
+        if(version >= 3){
+            efficiency = potentialEfficiency = read.ub() / 255f;
+            optionalEfficiency = read.ub() / 255f;
+        }
+
+        //version 4 (and only 4 at the moment) has visibility flags
+        if(version == 4){
+            visibleFlags = read.l();
+        }
+    }
+
+    @Override
+    public int moduleBitmask(){
+        return (items != null ? 1 : 0) | (power != null ? 0b10 : 0) | (liquids != null ? 0b100 : 0) | (gasses != null ? 0b1000 : 0) | 0b1_0000;
     }
 }

@@ -1,41 +1,41 @@
 package gas.world.blocks.campaign;
 
-import mindustry.annotations.Annotations.*;
 import gas.entities.comp.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
 import mindustry.content.*;
-import mindustry.type.*;
-import mindustry.world.blocks.experimental.*;
+import gas.content.*;
+import mindustry.world.blocks.defense.turrets.*;
 import gas.world.meta.*;
-import mindustry.game.EventType.*;
+import mindustry.annotations.Annotations.*;
 import gas.world.blocks.units.*;
 import arc.Graphics.*;
-import gas.world.blocks.defense.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
 import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
-import mindustry.world.blocks.storage.*;
+import mindustry.game.EventType.*;
 import gas.world.blocks.liquid.*;
+import mindustry.world.blocks.storage.*;
 import gas.entities.*;
 import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.type.*;
 import mindustry.world.blocks.campaign.Accelerator.*;
 import gas.world.blocks.gas.*;
 import arc.scene.ui.layout.*;
@@ -54,14 +54,14 @@ import gas.world.blocks.*;
 import gas.*;
 import gas.io.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
+import mindustry.world.blocks.heat.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
 import arc.Graphics.Cursor.*;
 import mindustry.world.blocks.sandbox.*;
@@ -72,6 +72,7 @@ public class GasAccelerator extends GasBlock {
     @Load("launch-arrow")
     public TextureRegion arrowRegion;
 
+    // TODO dynamic
     public Block launching = Blocks.coreNucleus;
 
     public int[] capacities = {};
@@ -93,7 +94,7 @@ public class GasAccelerator extends GasBlock {
             capacities[stack.item.id] = stack.amount;
             itemCapacity += stack.amount;
         }
-        consumes.items(launching.requirements);
+        consumeItems(launching.requirements);
         super.init();
     }
 
@@ -109,7 +110,7 @@ public class GasAccelerator extends GasBlock {
         @Override
         public void updateTile() {
             super.updateTile();
-            heat = Mathf.lerpDelta(heat, consValid() ? 1f : 0f, 0.05f);
+            heat = Mathf.lerpDelta(heat, efficiency, 0.05f);
             statusLerp = Mathf.lerpDelta(statusLerp, power.status, 0.05f);
         }
 
@@ -146,23 +147,21 @@ public class GasAccelerator extends GasBlock {
 
         @Override
         public Cursor getCursor() {
-            return !state.isCampaign() || !consValid() ? SystemCursor.arrow : super.getCursor();
+            return !state.isCampaign() || efficiency <= 0f ? SystemCursor.arrow : super.getCursor();
         }
 
         @Override
         public void buildConfiguration(Table table) {
             deselect();
-            if (!state.isCampaign() || !consValid())
+            if (!state.isCampaign() || efficiency <= 0f)
                 return;
-            // TODO implement
-            if (true) {
-                ui.showInfo("@indev.campaign");
-            } else {
-                ui.planet.showPlanetLaunch(state.rules.sector, sector -> {
-                    // TODO cutscene, etc...
-                    consume();
-                });
-            }
+            ui.planet.showPlanetLaunch(state.rules.sector, sector -> {
+                // TODO cutscene, etc...
+                // TODO should consume resources based on destination schem
+                consume();
+                universe.clearLoadoutInfo();
+                universe.updateLoadout(sector.planet.generator.getDefaultLoadout().findCore(), sector.planet.generator.getDefaultLoadout());
+            });
             Events.fire(Trigger.acceleratorUse);
         }
 

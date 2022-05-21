@@ -1,69 +1,59 @@
 package gas.world.consumers;
 
-import acontent.world.meta.AStats;
-import gas.annotations.GasAnnotations;
-import gas.gen.GasBuilding;
-import gas.type.Gas;
-import arc.scene.ui.layout.Table;
-import arc.struct.Bits;
-import gas.world.meta.GasValue;
-import mindustry.gen.Building;
-//import mindustry.ui.Cicon;
-import mindustry.ui.ReqImage;
-import mindustry.world.consumers.ConsumeType;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.Stats;
+import arc.scene.ui.layout.*;
+import gas.annotations.*;
+import gas.gen.*;
+import gas.type.*;
+import gas.world.*;
+import gas.world.meta.*;
+import mindustry.gen.*;
+import mindustry.ui.*;
+import mindustry.world.*;
+import mindustry.world.meta.*;
+
+import static mindustry.Vars.iconMed;
+
 @GasAnnotations.GasAddition(analogue = "mindustry.world.consumers.ConsumeLiquid")
-public class ConsumeGas extends GasConsume {
+public class ConsumeGas extends ConsumeGasBase{
     public final Gas gas;
-    public final float amount;
 
-    public ConsumeType type() {
-        return ConsumeType.liquid;
-    }
-
-    protected float use(Building entity) {
-        return Math.min(this.amount * entity.edelta(), entity.block.liquidCapacity);
-    }
-    public ConsumeGas(Gas gas, float amount) {
-        this.amount = amount;
+    public ConsumeGas(Gas gas, float amount){
+        super(amount);
         this.gas = gas;
     }
 
-    protected ConsumeGas() {
-        this((Gas) null, 0.0F);
+    protected ConsumeGas(){
+        this(null, 0f);
     }
 
     @Override
-    public void applyGasFilter(Bits filter) {
-        filter.set(this.gas.id,true);
+    public void apply(Block b){
+        super.apply(b);
+        GasBlock block = expectGasBlock(b);
+        block.gasFilter[gas.id] = true;
     }
 
-    public void build(Building tile, Table table) {
-        table.add(new ReqImage(this.gas.uiIcon, () -> {
-            return this.valid(tile);
-        })).size(32.0F);
+    @Override
+    public void build(Building b, Table table){
+        GasBuilding build = b.as();
+        table.add(new ReqImage(gas.uiIcon, () -> build.gasses.get(gas) > 0)).size(iconMed).top().left();
     }
 
-    public String getIcon() {
-        return "icon-liquid-consume";
+    @Override
+    public void update(Building b){
+        GasBuilding build = b.as();
+        build.gasses.remove(gas, amount * build.edelta());
     }
 
-    public void update(Building b) {
-        if (b==null || !(b instanceof GasBuilding))return;
-        GasBuilding entity=(GasBuilding)b;
-        entity.gasses.remove(this.gas, Math.min(this.use(entity), entity.gasses.get(this.gas)));
+    @Override
+    public float efficiency(Building b){
+        GasBuilding build = b.as();
+        //there can be more gas than necessary, so cap at 1
+        return Math.min(build.gasses.get(gas) / (amount * build.edelta()), 1f);
     }
 
-    public boolean valid(Building b) {
-        if (b==null || !(b instanceof GasBuilding))return false;
-        GasBuilding entity=(GasBuilding)b;
-        return entity.gasses != null && entity.gasses.get(this.gas) >= this.use(entity);
-    }
-
-    public void display(Stats stat) {
-        if (!(stat instanceof AStats))return;
-        AStats stats=(AStats)stat;
-        stats.add(this.booster ? Stat.booster : Stat.input, new GasValue(this.gas, this.amount * 60.0F, true));
+    @Override
+    public void display(Stats stats){
+        stats.add(booster ? Stat.booster : Stat.input, GasStatValues.gas(gas, amount * 60f, true));
     }
 }

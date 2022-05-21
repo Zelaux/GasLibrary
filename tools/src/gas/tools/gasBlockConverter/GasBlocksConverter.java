@@ -100,7 +100,7 @@ public class GasBlocksConverter{
             }
         }
         Seq<ClassOrInterfaceType> seq = new Seq<>();
-        Seq<CompilationUnit> sort = created.asArray().sort((a, b) -> {
+        Seq<CompilationUnit> sort = created.toSeq().sort((a, b) -> {
             ClassOrInterfaceDeclaration aClass = a.findFirst(ClassOrInterfaceDeclaration.class).get();
             ClassOrInterfaceDeclaration bClass = b.findFirst(ClassOrInterfaceDeclaration.class).get();
             try{
@@ -115,7 +115,7 @@ public class GasBlocksConverter{
                         String className = classType.getNameAsString();
                         CompilationUnit unit = getCompilationUnit(packageName, className);
                         if(unit == null){
-                            unit = created.asArray().find(c -> {
+                            unit = created.toSeq().find(c -> {
 //                                boolean samePackage = c.getPackageDeclaration().map(NodeWithName::getNameAsString).orElse("").equals(packageName);
                                 return c.getClassByName(className).isPresent();
                             });

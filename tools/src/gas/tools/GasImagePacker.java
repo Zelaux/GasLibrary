@@ -20,7 +20,6 @@ import mindustry.ctype.Content;
 import mindustry.ctype.MappableContent;
 import mindustry.ctype.UnlockableContent;
 import mindustry.mod.Mods;
-import mindustry.tools.ImagePacker;
 import mma.gen.ModContentRegions;
 
 public class GasImagePacker extends mma.tools.ModImagePacker {

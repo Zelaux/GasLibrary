@@ -2,74 +2,76 @@ package gas.world.blocks.units;
 
 import mindustry.entities.units.*;
 import gas.entities.comp.*;
+import arc.scene.ui.layout.*;
 import mindustry.entities.*;
 import gas.type.*;
-import arc.math.*;
 import gas.world.blocks.logic.*;
 import arc.scene.style.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.world.blocks.payloads.*;
+import gas.io.*;
 import gas.world.meta.*;
 import mindustry.game.EventType.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
-import mindustry.world.blocks.units.*;
+import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
 import gas.world.draw.*;
 import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
-import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.campaign.*;
-import mindustry.ui.*;
+import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
 import gas.world.*;
 import mindustry.world.blocks.units.UnitFactory.*;
 import gas.world.blocks.gas.*;
-import arc.scene.ui.layout.*;
+import mindustry.io.*;
+import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
 import mindustry.world.modules.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import mindustry.*;
 import gas.world.consumers.*;
-import arc.graphics.g2d.*;
+import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.*;
 import mindustry.world.consumers.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
-import gas.io.*;
-import gas.world.blocks.payloads.*;
+import arc.graphics.g2d.*;
+import mindustry.ui.*;
 import gas.gen.*;
-import gas.content.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
 import mindustry.type.*;
 import mindustry.world.blocks.sandbox.*;
-import gas.world.blocks.defense.turrets.*;
 
 public class GasUnitFactory extends GasUnitBlock {
 
@@ -84,22 +86,29 @@ public class GasUnitFactory extends GasUnitBlock {
         hasItems = true;
         solid = true;
         configurable = true;
+        clearOnDoubleTap = true;
         outputsPayload = true;
         rotate = true;
+        regionRotated1 = 1;
+        commandable = true;
         config(Integer.class, (GasUnitFactoryBuild tile, Integer i) -> {
+            if (!configurable)
+                return;
             if (tile.currentPlan == i)
                 return;
             tile.currentPlan = i < 0 || i >= plans.size ? -1 : i;
             tile.progress = 0;
         });
         config(UnitType.class, (GasUnitFactoryBuild tile, UnitType val) -> {
+            if (!configurable)
+                return;
             int next = plans.indexOf(p -> p.unit == val);
             if (tile.currentPlan == next)
                 return;
             tile.currentPlan = next;
             tile.progress = 0;
         });
-        consumes.add(new ConsumeItemDynamic((GasUnitFactoryBuild e) -> e.currentPlan != -1 ? plans.get(e.currentPlan).requirements : ItemStack.empty));
+        consume(new ConsumeItemDynamic((GasUnitFactoryBuild e) -> e.currentPlan != -1 ? plans.get(e.currentPlan).requirements : ItemStack.empty));
     }
 
     @Override
@@ -117,8 +126,8 @@ public class GasUnitFactory extends GasUnitBlock {
     @Override
     public void setBars() {
         super.setBars();
-        bars.add("progress", (GasUnitFactoryBuild e) -> new Bar("bar.progress", Pal.ammo, e::fraction));
-        bars.add("units", (GasUnitFactoryBuild e) -> new Bar(() -> e.unit() == null ? "[lightgray]" + Iconc.cancel : Core.bundle.format("bar.unitcap", Fonts.getUnicodeStr(e.unit().name), e.team.data().countType(e.unit()), Units.getCap(e.team)), () -> Pal.power, () -> e.unit() == null ? 0f : (float) e.team.data().countType(e.unit()) / Units.getCap(e.team)));
+        addBar("progress", (GasUnitFactoryBuild e) -> new Bar("bar.progress", Pal.ammo, e::fraction));
+        addBar("units", (GasUnitFactoryBuild e) -> new Bar(() -> e.unit() == null ? "[lightgray]" + Iconc.cancel : Core.bundle.format("bar.unitcap", Fonts.getUnicodeStr(e.unit().name), e.team.data().countType(e.unit()), Units.getStringCap(e.team)), () -> Pal.power, () -> e.unit() == null ? 0f : (float) e.team.data().countType(e.unit()) / Units.getCap(e.team)));
     }
 
     @Override
@@ -150,18 +159,31 @@ public class GasUnitFactory extends GasUnitBlock {
     }
 
     @Override
-    public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        Draw.rect(region, req.drawx(), req.drawy());
-        Draw.rect(outRegion, req.drawx(), req.drawy(), req.rotation * 90);
-        Draw.rect(topRegion, req.drawx(), req.drawy());
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        Draw.rect(region, plan.drawx(), plan.drawy());
+        Draw.rect(outRegion, plan.drawx(), plan.drawy(), plan.rotation * 90);
+        Draw.rect(topRegion, plan.drawx(), plan.drawy());
     }
 
     public class GasUnitFactoryBuild extends GasUnitBuild {
+
+        @Nullable
+        public Vec2 commandPos;
 
         public int currentPlan = -1;
 
         public float fraction() {
             return currentPlan == -1 ? 0 : progress / plans.get(currentPlan).time;
+        }
+
+        @Override
+        public Vec2 getCommandPosition() {
+            return commandPos;
+        }
+
+        @Override
+        public void onCommand(Vec2 target) {
+            commandPos = target;
         }
 
         @Override
@@ -182,7 +204,7 @@ public class GasUnitFactory extends GasUnitBlock {
         public void buildConfiguration(Table table) {
             Seq<UnitType> units = Seq.with(plans).map(u -> u.unit).filter(u -> u.unlockedNow() && !u.isBanned());
             if (units.any()) {
-                ItemSelection.buildTable(table, units, () -> currentPlan == -1 ? null : plans.get(currentPlan).unit, unit -> configure(plans.indexOf(u -> u.unit == unit)));
+                ItemSelection.buildTable(GasUnitFactory.this, table, units, () -> currentPlan == -1 ? null : plans.get(currentPlan).unit, unit -> configure(plans.indexOf(u -> u.unit == unit)));
             } else {
                 table.table(Styles.black3, t -> t.add("@none").color(Color.lightGray));
             }
@@ -231,10 +253,13 @@ public class GasUnitFactory extends GasUnitBlock {
 
         @Override
         public void updateTile() {
+            if (!configurable) {
+                currentPlan = 0;
+            }
             if (currentPlan < 0 || currentPlan >= plans.size) {
                 currentPlan = -1;
             }
-            if (consValid() && currentPlan != -1) {
+            if (efficiency > 0 && currentPlan != -1) {
                 time += edelta() * speedScl * Vars.state.rules.unitBuildSpeed(team);
                 progress += edelta() * Vars.state.rules.unitBuildSpeed(team);
                 speedScl = Mathf.lerpDelta(speedScl, 1f, 0.05f);
@@ -249,9 +274,13 @@ public class GasUnitFactory extends GasUnitBlock {
                     currentPlan = -1;
                     return;
                 }
-                if (progress >= plan.time && consValid()) {
+                if (progress >= plan.time) {
                     progress %= 1f;
-                    payload = new UnitPayload(plan.unit.create(team));
+                    Unit unit = plan.unit.create(team);
+                    if (commandPos != null && unit.isCommandable()) {
+                        unit.command().commandPosition(commandPos);
+                    }
+                    payload = new UnitPayload(unit);
                     payVector.setZero();
                     consume();
                     Events.fire(new UnitCreateEvent(payload.unit, this));
@@ -286,7 +315,7 @@ public class GasUnitFactory extends GasUnitBlock {
 
         @Override
         public byte version() {
-            return 1;
+            return 2;
         }
 
         @Override
@@ -294,6 +323,7 @@ public class GasUnitFactory extends GasUnitBlock {
             super.write(write);
             write.f(progress);
             write.s(currentPlan);
+            TypeIO.writeVecNullable(write, commandPos);
         }
 
         @Override
@@ -301,6 +331,9 @@ public class GasUnitFactory extends GasUnitBlock {
             super.read(read, revision);
             progress = read.f();
             currentPlan = read.s();
+            if (revision >= 2) {
+                commandPos = TypeIO.readVecNullable(read);
+            }
         }
     }
 }

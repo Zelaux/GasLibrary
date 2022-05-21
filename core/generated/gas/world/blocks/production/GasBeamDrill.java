@@ -1,41 +1,42 @@
 package gas.world.blocks.production;
 
+import mindustry.annotations.Annotations.*;
 import mindustry.entities.units.*;
 import gas.entities.comp.*;
-import mindustry.entities.*;
 import gas.type.*;
 import gas.world.blocks.logic.*;
-import mindustry.content.*;
-import mindustry.world.blocks.defense.turrets.*;
-import mindustry.world.blocks.experimental.*;
+import gas.content.*;
+import mindustry.type.*;
+import gas.world.blocks.payloads.*;
 import arc.*;
 import gas.world.meta.*;
-import mindustry.annotations.Annotations.*;
+import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import arc.math.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import arc.graphics.*;
-import gas.world.blocks.distribution.*;
-import gas.world.draw.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
 import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
+import mindustry.game.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
+import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.gas.*;
 import arc.math.geom.*;
 import gas.world.blocks.campaign.*;
@@ -47,36 +48,53 @@ import mindustry.world.blocks.payloads.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
 import arc.graphics.g2d.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
 import gas.world.blocks.*;
+import arc.graphics.*;
 import gas.*;
 import gas.io.*;
-import gas.world.blocks.payloads.*;
+import gas.world.draw.*;
 import mindustry.world.blocks.production.BeamDrill.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.world.blocks.units.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
+import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
 import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.world.blocks.power.*;
-import mindustry.type.*;
 import mindustry.world.blocks.sandbox.*;
 import static mindustry.Vars.*;
 
 public class GasBeamDrill extends GasBlock {
 
-    @Load("minelaser")
+    protected Rand rand = new Rand();
+
+    @Load("drill-laser")
     public TextureRegion laser;
 
-    @Load("minelaser-end")
+    @Load("drill-laser-end")
     public TextureRegion laserEnd;
+
+    @Load("drill-laser-center")
+    public TextureRegion laserCenter;
+
+    @Load("drill-laser-boost")
+    public TextureRegion laserBoost;
+
+    @Load("drill-laser-boost-end")
+    public TextureRegion laserEndBoost;
+
+    @Load("drill-laser-boost-center")
+    public TextureRegion laserCenterBoost;
 
     @Load("@-top")
     public TextureRegion topRegion;
+
+    @Load("@-glow")
+    public TextureRegion glowRegion;
 
     public float drillTime = 200f;
 
@@ -84,12 +102,28 @@ public class GasBeamDrill extends GasBlock {
 
     public int tier = 1;
 
-    public float laserWidth = 0.7f;
+    public float laserWidth = 0.65f;
 
     /**
-     * Effect randomly played while drilling.
+     * How many times faster the drill will progress when boosted by an optional consumer.
      */
-    public Effect updateEffect = Fx.mineSmall;
+    public float optionalBoostIntensity = 2.5f;
+
+    public Color sparkColor = Color.valueOf("fd9e81"), glowColor = Color.white;
+
+    public float glowIntensity = 0.2f, pulseIntensity = 0.07f;
+
+    public float glowScl = 3f;
+
+    public int sparks = 7;
+
+    public float sparkRange = 10f, sparkLife = 27f, sparkRecurrence = 4f, sparkSpread = 45f, sparkSize = 3.5f;
+
+    public Color boostHeatColor = Color.sky.cpy().mul(0.87f);
+
+    public Color heatColor = new Color(1f, 0.35f, 0.35f, 0.9f);
+
+    public float heatPulse = 0.3f, heatPulseScl = 7f;
 
     public GasBeamDrill(String name) {
         super(name);
@@ -98,12 +132,20 @@ public class GasBeamDrill extends GasBlock {
         update = true;
         solid = true;
         drawArrow = false;
+        regionRotated1 = 1;
+        envEnabled |= Env.space;
     }
 
     @Override
     public void init() {
-        clipSize = Math.max(clipSize, size * tilesize + (range + 1) * tilesize);
+        updateClipRadius((range + 2) * tilesize);
         super.init();
+    }
+
+    @Override
+    public void setBars() {
+        super.setBars();
+        addBar("drillspeed", (GasBeamDrillBuild e) -> new Bar(() -> Core.bundle.format("bar.drillspeed", Strings.fixed(e.lastDrillSpeed * 60, 2)), () -> Pal.ammo, () -> e.warmup));
     }
 
     @Override
@@ -122,32 +164,42 @@ public class GasBeamDrill extends GasBlock {
     }
 
     @Override
-    public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
-        Draw.rect(region, req.drawx(), req.drawy());
-        Draw.rect(topRegion, req.drawx(), req.drawy(), req.rotation * 90);
+    public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list) {
+        Draw.rect(region, plan.drawx(), plan.drawy());
+        Draw.rect(topRegion, plan.drawx(), plan.drawy(), plan.rotation * 90);
+    }
+
+    @Override
+    public void setStats() {
+        super.setStats();
+        if (optionalBoostIntensity != 1) {
+            stats.add(Stat.boostEffect, optionalBoostIntensity, StatUnit.timesSpeed);
+        }
     }
 
     @Override
     public void drawPlace(int x, int y, int rotation, boolean valid) {
-        Item item = null;
+        Item item = null, invalidItem = null;
         boolean multiple = false;
         int count = 0;
         for (int i = 0; i < size; i++) {
-            getLaserPos(x, y, rotation, i, Tmp.p1);
+            nearbySide(x, y, rotation, i, Tmp.p1);
             int j = 0;
             Item found = null;
             for (; j < range; j++) {
                 int rx = Tmp.p1.x + Geometry.d4x(rotation) * j, ry = Tmp.p1.y + Geometry.d4y(rotation) * j;
                 Tile other = world.tile(rx, ry);
-                if (other != null) {
-                    if (other.solid()) {
-                        Item drop = other.wallDrop();
-                        if (drop != null && drop.hardness <= tier) {
+                if (other != null && other.solid()) {
+                    Item drop = other.wallDrop();
+                    if (drop != null) {
+                        if (drop.hardness <= tier) {
                             found = drop;
                             count++;
+                        } else {
+                            invalidItem = drop;
                         }
-                        break;
                     }
+                    break;
                 }
             }
             if (found != null) {
@@ -169,21 +221,27 @@ public class GasBeamDrill extends GasBlock {
                 Draw.reset();
                 Draw.rect(item.fullIcon, dx, dy, s, s);
             }
+        } else if (invalidItem != null) {
+            drawPlaceText(Core.bundle.get("bar.drilltierreq"), x, y, false);
         }
     }
 
-    void getLaserPos(int tx, int ty, int rotation, int i, Point2 out) {
-        int cornerX = tx - (size - 1) / 2, cornerY = ty - (size - 1) / 2, s = size;
-        switch(rotation) {
-            case 0:
-                out.set(cornerX + s, cornerY + i);
-            case 1:
-                out.set(cornerX + i, cornerY + s);
-            case 2:
-                out.set(cornerX - 1, cornerY + i);
-            case 3:
-                out.set(cornerX + i, cornerY - 1);
+    @Override
+    public boolean canPlaceOn(Tile tile, Team team, int rotation) {
+        for (int i = 0; i < size; i++) {
+            nearbySide(tile.x, tile.y, rotation, i, Tmp.p1);
+            for (int j = 0; j < range; j++) {
+                Tile other = world.tile(Tmp.p1.x + Geometry.d4x(rotation) * j, Tmp.p1.y + Geometry.d4y(rotation) * j);
+                if (other != null && other.solid()) {
+                    Item drop = other.wallDrop();
+                    if (drop != null && drop.hardness <= tier) {
+                        return true;
+                    }
+                    break;
+                }
+            }
         }
+        return false;
     }
 
     public class GasBeamDrillBuild extends GasBuilding {
@@ -197,7 +255,9 @@ public class GasBeamDrill extends GasBlock {
 
         public float time;
 
-        public float warmup;
+        public float warmup, boostWarmup;
+
+        public float lastDrillSpeed;
 
         @Override
         public void drawSelect() {
@@ -215,21 +275,22 @@ public class GasBeamDrill extends GasBlock {
             super.updateTile();
             if (lasers[0] == null)
                 updateLasers();
-            boolean cons = shouldConsume();
-            warmup = Mathf.lerpDelta(warmup, Mathf.num(consValid()), 0.1f);
+            warmup = Mathf.approachDelta(warmup, Mathf.num(efficiency > 0), 1f / 60f);
             lastItem = null;
             boolean multiple = false;
+            int dx = Geometry.d4x(rotation), dy = Geometry.d4y(rotation), facingAmount = 0;
             // update facing tiles
             for (int p = 0; p < size; p++) {
                 Point2 l = lasers[p];
                 Tile dest = null;
                 for (int i = 0; i < range; i++) {
-                    int rx = l.x + Geometry.d4x(rotation) * i, ry = l.y + Geometry.d4y(rotation) * i;
+                    int rx = l.x + dx * i, ry = l.y + dy * i;
                     Tile other = world.tile(rx, ry);
                     if (other != null) {
                         if (other.solid()) {
                             Item drop = other.wallDrop();
                             if (drop != null && drop.hardness <= tier) {
+                                facingAmount++;
                                 if (lastItem != drop && lastItem != null) {
                                     multiple = true;
                                 }
@@ -241,20 +302,21 @@ public class GasBeamDrill extends GasBlock {
                     }
                 }
                 facing[p] = dest;
-                if (cons && dest != null && Mathf.chanceDelta(0.05 * warmup)) {
-                    updateEffect.at(dest.worldx() + Mathf.range(4f), dest.worldy() + Mathf.range(4f), dest.wallDrop().color);
-                }
             }
             // when multiple items are present, count that as no item
             if (multiple) {
                 lastItem = null;
             }
-            time += edelta();
+            float multiplier = Mathf.lerp(1f, optionalBoostIntensity, optionalEfficiency);
+            boostWarmup = Mathf.lerpDelta(boostWarmup, optionalEfficiency, 0.1f);
+            lastDrillSpeed = (facingAmount * multiplier * timeScale) / drillTime;
+            time += edelta() * multiplier;
             if (time >= drillTime) {
                 for (var tile : facing) {
                     Item drop = tile == null ? null : tile.wallDrop();
                     if (items.total() < itemCapacity && drop != null) {
                         items.add(drop, 1);
+                        produced(drop);
                     }
                 }
                 time %= drillTime;
@@ -266,22 +328,75 @@ public class GasBeamDrill extends GasBlock {
 
         @Override
         public boolean shouldConsume() {
-            return items.total() < itemCapacity;
+            return items.total() < itemCapacity && enabled;
         }
 
         @Override
         public void draw() {
             Draw.rect(block.region, x, y);
             Draw.rect(topRegion, x, y, rotdeg());
-            Draw.z(Layer.power - 1);
+            if (isPayload())
+                return;
             var dir = Geometry.d4(rotation);
+            int ddx = Geometry.d4x(rotation + 1), ddy = Geometry.d4y(rotation + 1);
             for (int i = 0; i < size; i++) {
                 Tile face = facing[i];
                 if (face != null) {
                     Point2 p = lasers[i];
-                    Drawf.laser(team, laser, laserEnd, (p.x - dir.x / 2f) * tilesize, (p.y - dir.y / 2f) * tilesize, face.worldx() - (dir.x / 2f) * (tilesize), face.worldy() - (dir.y / 2f) * (tilesize), (laserWidth + Mathf.absin(Time.time + i * 4 + (id % 20) * 6, 3f, 0.07f)) * warmup);
+                    float lx = face.worldx() - (dir.x / 2f) * tilesize, ly = face.worldy() - (dir.y / 2f) * tilesize;
+                    float width = (laserWidth + Mathf.absin(Time.time + i * 5 + id * 9, glowScl, pulseIntensity)) * warmup;
+                    Draw.z(Layer.power - 1);
+                    Draw.mixcol(glowColor, Mathf.absin(Time.time + i * 5 + id * 9, glowScl, glowIntensity));
+                    if (Math.abs(p.x - face.x) + Math.abs(p.y - face.y) == 0) {
+                        Draw.scl(width);
+                        if (boostWarmup < 0.99f) {
+                            Draw.alpha(1f - boostWarmup);
+                            Draw.rect(laserCenter, lx, ly);
+                        }
+                        if (boostWarmup > 0.01f) {
+                            Draw.alpha(boostWarmup);
+                            Draw.rect(laserCenterBoost, lx, ly);
+                        }
+                        Draw.scl();
+                    } else {
+                        float lsx = (p.x - dir.x / 2f) * tilesize, lsy = (p.y - dir.y / 2f) * tilesize;
+                        if (boostWarmup < 0.99f) {
+                            Draw.alpha(1f - boostWarmup);
+                            Drawf.laser(laser, laserEnd, lsx, lsy, lx, ly, width);
+                        }
+                        if (boostWarmup > 0.001f) {
+                            Draw.alpha(boostWarmup);
+                            Drawf.laser(laserBoost, laserEndBoost, lsx, lsy, lx, ly, width);
+                        }
+                    }
+                    Draw.color();
+                    Draw.mixcol();
+                    Draw.z(Layer.effect);
+                    Lines.stroke(warmup);
+                    rand.setState(i, id);
+                    Color col = face.wallDrop().color;
+                    Color spark = Tmp.c3.set(sparkColor).lerp(boostHeatColor, boostWarmup);
+                    for (int j = 0; j < sparks; j++) {
+                        float fin = (Time.time / sparkLife + rand.random(sparkRecurrence + 1f)) % sparkRecurrence;
+                        float or = rand.range(2f);
+                        Tmp.v1.set(sparkRange * fin, 0).rotate(rotdeg() + rand.range(sparkSpread));
+                        Draw.color(spark, col, fin);
+                        float px = Tmp.v1.x, py = Tmp.v1.y;
+                        if (fin <= 1f)
+                            Lines.lineAngle(lx + px + or * ddx, ly + py + or * ddy, Angles.angle(px, py), Mathf.slope(fin) * sparkSize);
+                    }
+                    Draw.reset();
                 }
             }
+            if (glowRegion.found()) {
+                Draw.z(Layer.blockAdditive);
+                Draw.blend(Blending.additive);
+                Draw.color(Tmp.c1.set(heatColor).lerp(boostHeatColor, boostWarmup), warmup * (heatColor.a * (1f - heatPulse + Mathf.absin(heatPulseScl, heatPulse))));
+                Draw.rect(glowRegion, x, y, rotdeg());
+                Draw.blend();
+                Draw.color();
+            }
+            Draw.blend();
             Draw.reset();
         }
 
@@ -295,7 +410,28 @@ public class GasBeamDrill extends GasBlock {
             for (int i = 0; i < size; i++) {
                 if (lasers[i] == null)
                     lasers[i] = new Point2();
-                getLaserPos(tileX(), tileY(), rotation, i, lasers[i]);
+                nearbySide(tileX(), tileY(), rotation, i, lasers[i]);
+            }
+        }
+
+        @Override
+        public byte version() {
+            return 1;
+        }
+
+        @Override
+        public void write(Writes write) {
+            super.write(write);
+            write.f(time);
+            write.f(warmup);
+        }
+
+        @Override
+        public void read(Reads read, byte revision) {
+            super.read(read, revision);
+            if (revision >= 1) {
+                time = read.f();
+                warmup = read.f();
             }
         }
     }

@@ -37,12 +37,13 @@ public class GasSource extends GasBlock {
             tile.source = null;
         });
     }
-    public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list) {
-        this.drawRequestConfigCenter(req, req.config, "center");
+    @Override
+    public void drawPlanConfig(BuildPlan req, Eachable<BuildPlan> list) {
+        this.drawPlanConfigCenter(req, req.config, "center");
     }
     public void setBars() {
         super.setBars();
-        this.bars.remove("gas");
+        removeBar("gas");
     }
     public class GasSourceBuild extends GasBuilding {
         @Nullable
@@ -75,7 +76,7 @@ public class GasSource extends GasBlock {
             }, this::configure);
         }
 
-        public boolean onConfigureTileTapped(Building other) {
+        public boolean onConfigureBuildTapped(Building other) {
             if (this == other) {
                 this.deselect();
                 this.configure((Object)null);

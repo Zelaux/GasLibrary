@@ -9,6 +9,7 @@ import mindustry.world.meta.*;
 
 public class GenericCrafterWithGas extends GasGenericCrafter{
     public @Nullable GasStack outputGas;
+//    public @Nullable GasStack outputGas;
 
     public GenericCrafterWithGas(String name){
         super(name);
@@ -46,7 +47,7 @@ public class GenericCrafterWithGas extends GasGenericCrafter{
         }
         @Override
         public void updateTile() {
-            if (consValid()) {
+            /*if (consValid()) {
 
                 progress += getProgressIncrease(craftTime);
                 totalProgress += delta();
@@ -95,7 +96,7 @@ public class GenericCrafterWithGas extends GasGenericCrafter{
 
             if (outputGas != null && outputGas.gas != null && hasGasses) {
                 dumpGas(outputGas.gas);
-            }
+            }*/
         }
     }
 }

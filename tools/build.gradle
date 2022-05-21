@@ -9,7 +9,7 @@ import arc.graphics.Pixmap
 import arc.packer.TexturePacker
 import arc.struct.IntIntMap
 import arc.struct.IntMap
-import arc.util.async.Threads
+//import arc.util.async.Threads
 
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -177,7 +177,7 @@ task pack(dependsOn: [classes, configurations.runtimeClasspath]) {
             }
         }
 
-        Threads.await(executor)
+        arc.util.async.Threads.await(executor)
 
         println "Time taken for AA: ${(System.currentTimeMillis() - ms) / 1000f}"
         println "Copy sprites start"
@@ -254,7 +254,7 @@ task genSprites(dependsOn: classes, type: JavaExec) {
 }
 task updateMindustryVersion (dependsOn: [classes, configurations.runtimeClasspath], type: JavaExec) {
     maxHeapSize = "4048m"
-    args("-Xmx4048m", "--enable-preview", mindustryVersion)
+    args("-Xmx4048m", "--enable-preview", "v_${mindustryVersionFull}", "arc_${arcVersion}")
     main = "gas.tools.updateVersion.GasVersionUpdater"
     classpath = sourceSets.main.runtimeClasspath
     workingDir = "../"

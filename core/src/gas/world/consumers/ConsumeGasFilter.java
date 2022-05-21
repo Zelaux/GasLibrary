@@ -1,66 +1,86 @@
 package gas.world.consumers;
 
-import gas.annotations.GasAnnotations;
-import gas.content.Gasses;
-import gas.gen.GasBuilding;
-import gas.type.Gas;
-import gas.world.meta.values.GasFilterValue;
-import arc.func.Boolf;
-import arc.scene.ui.layout.Table;
-import arc.struct.Bits;
-import arc.struct.Seq;
-import mindustry.gen.Building;
-//import mindustry.ui.Cicon;
-import mindustry.ui.MultiReqImage;
-import mindustry.ui.ReqImage;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.Stats;
-@GasAnnotations.GasAddition(analogue = "mindustry.world.consumers.ConsumeLiquidFilter")
-public class ConsumeGasFilter extends ConsumeGasBase {
-    public final Boolf<Gas> filter;
+import arc.func.*;
+import arc.scene.ui.layout.*;
+import arc.struct.*;
+import arc.util.*;
+import gas.annotations.*;
+import gas.content.*;
+import gas.gen.*;
+import gas.type.*;
+import gas.world.*;
+import gas.world.meta.*;
+import mindustry.gen.*;
+import mindustry.ui.*;
+import mindustry.world.*;
+import mindustry.world.meta.*;
 
-    public ConsumeGasFilter(Boolf<Gas> gas, float amount) {
+import static mindustry.Vars.content;
+
+@GasAnnotations.GasAddition(analogue = "mindustry.world.consumers.ConsumeLiquidFilter")
+public class ConsumeGasFilter extends ConsumeGasBase{
+    public Boolf<Gas> filter = l -> false;
+
+    public ConsumeGasFilter(Boolf<Gas> gas, float amount){
         super(amount);
         this.filter = gas;
     }
 
-    public void applyGasFilter(Bits arr) {
-        Gasses.all().each((gas)->{
-            return filter.get(gas);
-        }, (gas) -> {
-            arr.set((gas).id);
-        });
+    public ConsumeGasFilter(){
     }
 
-    public void build(Building t, Table table) {
-        GasBuilding tile=(GasBuilding)t;
-        Seq<Gas> list = Gasses.all().select((g) -> {
-            return !g.isHidden() && this.filter.get(g);
-        });
+    @Override
+    public void apply(Block b){
+        GasBlock block = expectGasBlock(b);
+        block.hasGasses = true;
+        Gasses.all().each(filter, item -> block.gasFilter[item.id] = true);
+    }
+
+    @Override
+    public void build(Building b, Table table){
+        GasBuilding build = b.as();
+        Seq<Gas> list = Gasses.all().select(l -> !l.isHidden() && filter.get(l));
         MultiReqImage image = new MultiReqImage();
-        list.each((gas) -> {
-            image.add(new ReqImage(gas.uiIcon, () -> {
-                return tile.gasses != null && tile.gasses.get(gas) >= this.use(tile);
-            }));
-        });
-        table.add(image).size(32.0F);
+        list.each(gas -> image.add(new ReqImage(gas.uiIcon, () ->
+        build.gasses != null && build.gasses.get(gas) > 0)));
+        table.add(image).size(8 * 4);
     }
 
-    public String getIcon() {
-        return "icon-liquid-consume";
+    @Override
+    public void update(Building b){
+        GasBuilding build = b.as();
+        Gas gas = getConsumed(build);
+        if(gas != null){
+            build.gasses.remove(gas, amount * build.edelta());
+        }
     }
 
-    public void update(Building e) {
-        GasBuilding entity=(GasBuilding)e;
-        entity.gasses.remove(entity.gasses.current(), this.use(entity));
+    @Override
+    public float efficiency(Building b){
+        GasBuilding build = b.as();
+        var gas = getConsumed(build);
+        return gas != null ? Math.min(build.gasses.get(gas) / (amount * build.edelta()), 1f) : 0f;
     }
 
-    public boolean valid(Building e) {
-        GasBuilding entity=(GasBuilding)e;
-        return entity != null && entity.gasses != null && this.filter.get(entity.gasses.current()) && entity.gasses.currentAmount() >= this.use(entity);
+    public @Nullable Gas getConsumed(Building b){
+        GasBuilding build = b.as();
+        if(filter.get(build.gasses.current()) && build.gasses.currentAmount() > 0){
+            return build.gasses.current();
+        }
+
+        var gasses = Gasses.all();
+
+        for(int i = 0; i < gasses.size; i++){
+            var gas = gasses.get(i);
+            if(filter.get(gas) && build.gasses.get(gas) > 0){
+                return gas;
+            }
+        }
+        return null;
     }
 
-    public void display(Stats stats) {
-        stats.add(this.booster ? Stat.booster : Stat.input, new GasFilterValue(this.filter, this.amount * 60.0F, true));
+    @Override
+    public void display(Stats stats){
+        stats.add(booster ? Stat.booster : Stat.input, GasStatValues.gasses(filter, amount * 60f, true));
     }
 }

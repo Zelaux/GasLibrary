@@ -8,11 +8,11 @@ import mindustry.world.meta.*;
 
 import static mindustry.type.ItemStack.with;
 
-public class GasBlocks implements ContentList{
+public class GasBlocks {
     public static Block gasSource;
     public static Block gasVoid;
 
-    public void load(){
+    public static void load(){
         gasSource = new GasSource("gas-source"){{
 //            localizedName = "Gas Source";
 //            description = "Infinitely outputs gasses. Sandbox only.";

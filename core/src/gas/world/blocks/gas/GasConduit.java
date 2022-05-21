@@ -63,7 +63,7 @@ public class GasConduit extends GasGasBlock implements Autotiler {
     }
 
     @Override
-    public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list) {
+    public void drawPlanRegion(BuildPlan req, Eachable<BuildPlan> list) {
         var bits = getTiling(req, list);
         if (bits == null)
             return;
@@ -162,7 +162,7 @@ public class GasConduit extends GasGasBlock implements Autotiler {
         @Override
         public void updateTile() {
             smoothGas = Mathf.lerpDelta(smoothGas, gasses.currentAmount() / gasCapacity, 0.05f);
-            if (gasses.total() > 0.001f && timer(timerFlow, 1)) {
+            if (gasses.currentAmount() > 0.001f && timer(timerFlow, 1)) {
                 moveGasForward(leaks, gasses.current());
                 noSleep();
             } else {
