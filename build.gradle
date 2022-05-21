@@ -1,17 +1,26 @@
+import java.time.format.DateTimeFormatter
+
 buildscript {
     ext {
-        arcHash = "v135"
-        packerHash = '128'
-        mindustryVersion = "v135"
-        aciVersion = "9f9ed7da24"
-        modsDirectories = [];
-        def file = new File(rootDir, "modsDirectoies.txt");
-//        println "abs->"+file.getAbsolutePath();
-        if (file.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            reader.lines().forEach(line -> modsDirectories.add(line))
-        }
-        String modCoreVersionDemo = null;
+//        arcVersion = "v135"
+
+        // v7
+        mindustryPath = "com.github.Anuken.MindustryJitpack"
+        mindustryVersionFull = '68f053f409c999f0a66bc6ac30760c331b2c0d6c'
+        mindustryVersion = mindustryVersionFull.substring(0, 10)
+        mindustryVersionOld="v135"
+        arcVersion = "ef9d6ac655"
+//        arcVersion = "916c5a77"
+
+
+
+        // normal
+        //mindustryPath = "com.github.Anuken.Mindustry"
+        //mindustryVersion = 'v135'
+        //arcVersion=mindustryVersion
+
+        aciVersion = "45ad8cd8ed9"
+        /*String modCoreVersionDemo = null;
         try {
             modCoreVersionDemo = new String(new java.net.URL("https://raw.githubusercontent.com/Zelaux/ZelauxModCore/master/versions/" + mindustryVersion + ".txt").openStream().readAllBytes());
         } catch (IOException exception) {
@@ -31,10 +40,10 @@ buildscript {
 
     dependencies {
         classpath "com.github.Zelaux.ZelauxModCore:annotations:$modCoreVersion"
-        classpath "com.github.Anuken.Mindustry:core:$mindustryVersion"
-        classpath "com.github.Anuken.Mindustry:tools:$mindustryVersion"
-        classpath "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-        classpath "com.github.Anuken.Arc:packer:$arcHash"
+        classpath "$mindustryPath:core:$mindustryVersion"
+//        classpath "com.github.Anuken.Mindustry:tools:$mindustryVersionOld"
+        classpath "com.github.Anuken.Arc:arc-core:$arcVersion"
+        classpath "com.github.Anuken.Arc:packer:$arcVersion"
     }
 }
 plugins {
@@ -64,7 +73,7 @@ allprojects {
         arcModule = { String name ->
             //skip to last submodule
             if (name.contains(':')) name = name.split(':').last()
-            return "com.github.Anuken.Arc:$name:$arcHash"
+            return "com.github.Anuken.Arc:$name:$arcVersion"
         }
         mindustryModule = { String name ->
             //skip to last submodule
@@ -196,8 +205,8 @@ project(":core") {
 
         implementation "com.github.Zelaux:AdvancedContentInfo:$aciVersion"
 
-        compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-        compileOnly "com.github.Anuken.Mindustry:tools:$mindustryVersion"
+        compileOnly "$mindustryPath:core:$mindustryVersion"
+//        compileOnly "com.github.Anuken.Mindustry:tools:$mindustryVersionOld"
 
         annotationProcessor 'com.github.Anuken:jabel:34e4c172e65b3928cd9eabe1993654ea79c409cd'
         compileOnly project(":annotations")
@@ -316,12 +325,12 @@ project(":tools") {
         implementation project(":core")
 
         implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.22.1'
-        implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+        implementation "$mindustryPath:core:$mindustryVersion"
 
         implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
         implementation "com.github.Zelaux.ZelauxModCore:tools:$modCoreVersion"
 
-        implementation "com.github.Anuken.Mindustry:tools:$mindustryVersion"
+//        implementation "com.github.Anuken.Mindustry:tools:$mindustryVersionOld"
 
 
         kapt 'com.github.Anuken:jabel:34e4c172e65b3928cd9eabe1993654ea79c409cd'
@@ -332,8 +341,8 @@ project(":annotations") {
     dependencies {
         implementation 'com.squareup:javapoet:1.12.1'
         implementation arcModule('arc-core')
-        implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
-        implementation "com.github.Anuken.Mindustry:tools:$mindustryVersion"
+        implementation "$mindustryPath:core:$mindustryVersion"
+//        implementation "com.github.Anuken.Mindustry:tools:$mindustryVersionOld"
 
         implementation "com.github.Zelaux.ZelauxModCore:core:$modCoreVersion"
         implementation "com.github.Zelaux.ZelauxModCore:tools:$modCoreVersion"
@@ -412,12 +421,12 @@ task resolveDependencies {
         }
     }
 }
-task mjar() {
+task mjar(){
     dependsOn "jar"
     doFirst {
     }
     ext{
-        move={String intoPath ->
+        acopy={String intoPath ->
             delete {
                 delete "${intoPath}/${project.archivesBaseName}Desktop.jar"
             }
@@ -428,14 +437,49 @@ task mjar() {
             println "moved to "+intoPath
         }
     }
-    doLast {
-        for (String directory:modsDirectories){
-            if (directory.equals("classic")){
-                directory="${arc.util.OS.getAppDataDirectoryString("Mindustry")}/mods/";
-            }
-            move(directory);
+    doLast{
+        def modsDirectories = [];
+        def file = new File(rootDir, "modsDirectories.txt");
+
+        if (file.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            reader.lines().forEach(line -> modsDirectories.add(line))
+            reader.close();
+        } else {
+            modsDirectories.add("classic");
         }
-        def time = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
-        System.out.println("\tlast build time: ${time}")
+        for (String directory : modsDirectories) {
+            if (directory.equals("classic")) {
+                directory = getdatadir() + "mods";
+            }
+//            println "directory: "+directory
+            acopy(directory);
+        }
+        def time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+        println "Build ended at: ${time}"
     }
+}
+def os() { //Returns OS name
+    String s = System.getProperty("os.name");
+    return s == null ? "" : s;
+}
+
+def getdatadir() { //Returns Mindustry data directory path
+    def ret = System.getenv("MINDUSTRY_DATA_DIR")
+    if (ret == null) {
+        def os = os()
+        if (os.contains("Windows")) {
+            return System.getenv("AppData") + "\\Mindustry\\"
+        } else if (os.contains("Linux") || os.contains("BSD")) {
+            if (System.getenv("XDG_DATA_HOME") != null) {
+                String dir = System.getenv("XDG_DATA_HOME")
+                if (!dir.endsWith("/")) dir += "/"
+                return dir + "Mindustry/"
+            }
+            return System.getProperty("user.home") + "/.local/share/Mindustry/"
+        } else if (os.contains("Mac")) {
+            return System.getProperty("user.home") + "/Library/Application Support/Mindustry/";
+        }
+    }
+    return ret
 }
