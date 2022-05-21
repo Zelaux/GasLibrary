@@ -4,26 +4,27 @@ import java.util.zip.*;
 import gas.entities.comp.*;
 import arc.scene.ui.layout.*;
 import gas.type.*;
+import gas.world.blocks.campaign.*;
 import gas.world.blocks.logic.*;
+import gas.content.*;
 import mindustry.world.blocks.defense.turrets.*;
 import gas.world.blocks.payloads.*;
-import mindustry.world.blocks.experimental.*;
 import mindustry.core.*;
-import arc.util.io.*;
 import gas.world.meta.*;
 import mindustry.ui.*;
 import gas.world.blocks.units.*;
-import gas.world.blocks.defense.*;
+import mindustry.world.blocks.heat.*;
 import arc.util.*;
 import mindustry.world.blocks.legacy.*;
-import mindustry.world.blocks.distribution.*;
+import mindustry.gen.*;
 import mindustry.world.blocks.production.*;
 import mindustry.world.draw.*;
 import mindustry.world.blocks.liquid.*;
 import mindustry.world.meta.*;
-import gas.world.blocks.distribution.*;
-import mindustry.world.blocks.logic.*;
-import mindustry.gen.*;
+import gas.world.blocks.heat.*;
+import gas.world.blocks.defense.*;
+import mindustry.world.blocks.payloads.*;
+import mindustry.world.blocks.distribution.*;
 import gas.world.blocks.power.*;
 import mindustry.world.*;
 import gas.world.blocks.sandbox.*;
@@ -31,55 +32,59 @@ import mindustry.world.blocks.storage.*;
 import gas.world.blocks.liquid.*;
 import gas.entities.*;
 import mindustry.world.blocks.campaign.*;
-import gas.gen.*;
-import gas.world.*;
 import gas.world.blocks.defense.turrets.*;
+import gas.world.blocks.distribution.*;
+import gas.world.*;
+import mindustry.world.consumers.*;
+import mindustry.world.modules.*;
 import gas.world.blocks.gas.*;
 import mindustry.io.*;
 import arc.math.geom.*;
-import gas.world.blocks.campaign.*;
-import mindustry.world.modules.*;
+import mindustry.logic.LAssembler.*;
+import arc.Graphics.*;
 import gas.ui.*;
 import mindustry.world.blocks.environment.*;
 import gas.world.consumers.*;
-import mindustry.world.blocks.payloads.*;
+import mindustry.ai.types.*;
 import mindustry.world.blocks.*;
 import gas.world.blocks.production.GasGenericCrafter.*;
-import mindustry.world.consumers.*;
+import mindustry.world.blocks.logic.*;
 import gas.world.modules.*;
-import mindustry.logic.LAssembler.*;
+import gas.world.blocks.*;
 import gas.*;
 import mindustry.logic.LExecutor.*;
 import gas.io.*;
 import gas.world.draw.*;
 import mindustry.world.blocks.logic.LogicBlock.*;
 import arc.func.*;
-import mindustry.world.blocks.units.*;
-import gas.content.*;
-import mindustry.io.TypeIO.*;
+import gas.gen.*;
 import gas.world.blocks.storage.*;
+import mindustry.io.TypeIO.*;
+import mindustry.world.blocks.units.*;
+import gas.entities.bullets.*;
 import mindustry.graphics.*;
 import gas.world.blocks.production.*;
 import arc.struct.*;
 import java.io.*;
-import gas.world.blocks.*;
-import mindustry.ai.types.*;
+import arc.util.io.*;
 import mindustry.world.blocks.defense.*;
-import gas.entities.bullets.*;
-import gas.world.meta.values.*;
 import mindustry.logic.*;
 import mindustry.world.blocks.power.*;
+import arc.Graphics.Cursor.*;
 import mindustry.world.blocks.sandbox.*;
 import mindustry.world.blocks.ConstructBlock.*;
 import static mindustry.Vars.*;
 
-public class GasLogicBlock extends GasBlock {
+class GasLogicBlock{} /*extends GasBlock {
 
     private static final int maxByteLen = 1024 * 500;
 
     public int maxInstructionScale = 5;
 
     public int instructionsPerTick = 1;
+
+    // privileged only
+    public int maxInstructionsPerTick = 40;
 
     public float range = 8 * 10;
 
@@ -92,8 +97,14 @@ public class GasLogicBlock extends GasBlock {
         schematicPriority = 5;
         // universal, no real requirements
         envEnabled = Env.any;
-        config(byte[].class, (GasLogicBuild build, byte[] data) -> build.readCompressed(data, true));
+        config(byte[].class, (GasLogicBuild build, byte[] data) -> {
+            if (!accessible())
+                return;
+            build.readCompressed(data, true);
+        });
         config(Integer.class, (GasLogicBuild entity, Integer pos) -> {
+            if (!accessible())
+                return;
             // if there is no valid link in the first place, nobody cares
             if (!entity.validLink(world.build(pos)))
                 return;
@@ -116,6 +127,15 @@ public class GasLogicBlock extends GasBlock {
         });
     }
 
+    public boolean accessible() {
+        return !privileged || state.rules.editor || state.playtestingMap != null;
+    }
+
+    @Override
+    public boolean canBreak(Tile tile) {
+        return accessible();
+    }
+
     public static String getLinkName(Block block) {
         String name = block.name;
         if (name.contains("-")) {
@@ -136,8 +156,8 @@ public class GasLogicBlock extends GasBlock {
 
     public static byte[] compress(byte[] bytes, Seq<LogicLink> links) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream stream = new DataOutputStream(new DeflaterOutputStream(baos));
+            var baos = new ByteArrayOutputStream();
+            var stream = new DataOutputStream(new DeflaterOutputStream(baos));
             // current version of config format
             stream.write(1);
             // write string data
@@ -162,12 +182,16 @@ public class GasLogicBlock extends GasBlock {
     @Override
     public void setStats() {
         super.setStats();
-        stats.add(Stat.linkRange, range / 8, StatUnit.blocks);
-        stats.add(Stat.instructions, instructionsPerTick * 60, StatUnit.perSecond);
+        if (!privileged) {
+            stats.add(Stat.linkRange, range / 8, StatUnit.blocks);
+            stats.add(Stat.instructions, instructionsPerTick * 60, StatUnit.perSecond);
+        }
     }
 
     @Override
     public void drawPlace(int x, int y, int rotation, boolean valid) {
+        if (privileged)
+            return;
         Drawf.circles(x * tilesize + offset, y * tilesize + offset, range);
     }
 
@@ -204,9 +228,9 @@ public class GasLogicBlock extends GasBlock {
 
     public class GasLogicBuild extends GasBuilding implements Ranged {
 
-        /**
+        *//**
          * logic "source code" as list of asm statements
-         */
+         *//*
         public String code = "";
 
         public LExecutor executor = new LExecutor();
@@ -217,11 +241,19 @@ public class GasLogicBlock extends GasBlock {
 
         public boolean checkedDuplicates = false;
 
-        /**
+        // dynamic only for privileged processors
+        public int ipt = instructionsPerTick;
+
+        *//**
          * Block of code to run after load.
-         */
+         *//*
         @Nullable
         public Runnable loadBlock;
+
+        {
+            executor.privileged = privileged;
+            executor.build = this;
+        }
 
         public void readCompressed(byte[] data, boolean relative) {
             try (DataInputStream stream = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)))) {
@@ -297,7 +329,7 @@ public class GasLogicBlock extends GasBlock {
                 code = str;
                 try {
                     // create assembler to store extra variables
-                    LAssembler asm = LAssembler.assemble(str);
+                    LAssembler asm = LAssembler.assemble(str, privileged);
                     // store connections
                     for (var link : links) {
                         if (link.active && (link.valid = validLink(world.build(link.x, link.y)))) {
@@ -342,9 +374,42 @@ public class GasLogicBlock extends GasBlock {
                     executor.load(asm);
                 } catch (Exception e) {
                     // handle malformed code and replace it with nothing
-                    executor.load(code = "");
+                    executor.load(LAssembler.assemble(code = "", privileged));
                 }
             }
+        }
+
+        // editor-only processors cannot be damaged or destroyed
+        @Override
+        public boolean collide(Bullet other) {
+            return !privileged;
+        }
+
+        @Override
+        public boolean displayable() {
+            return accessible();
+        }
+
+        @Override
+        public void damage(float damage) {
+            if (!privileged) {
+                super.damage(damage);
+            }
+        }
+
+        @Override
+        public void removeFromProximity() {
+            super.removeFromProximity();
+            for (var link : executor.links) {
+                if (!link.enabled && link.lastDisabler == this) {
+                    link.enabled = true;
+                }
+            }
+        }
+
+        @Override
+        public Cursor getCursor() {
+            return !accessible() ? SystemCursor.arrow : super.getCursor();
         }
 
         // logic blocks cause write problems when picked up
@@ -413,14 +478,17 @@ public class GasLogicBlock extends GasBlock {
             if (changed) {
                 updateCode(code, true, null);
             }
-            if (enabled) {
-                accumulator += edelta() * instructionsPerTick * (consValid() ? 1 : 0);
-                if (accumulator > maxInstructionScale * instructionsPerTick)
-                    accumulator = maxInstructionScale * instructionsPerTick;
+            if (!privileged) {
+                ipt = instructionsPerTick;
+            }
+            if (state.rules.disableWorldProcessors && privileged)
+                return;
+            if (enabled && executor.initialized()) {
+                accumulator += edelta() * ipt * efficiency;
+                if (accumulator > maxInstructionScale * ipt)
+                    accumulator = maxInstructionScale * ipt;
                 for (int i = 0; i < (int) accumulator; i++) {
-                    if (executor.initialized()) {
-                        executor.runOnce();
-                    }
+                    executor.runOnce();
                     accumulator--;
                 }
             }
@@ -445,7 +513,9 @@ public class GasLogicBlock extends GasBlock {
         @Override
         public void drawConfigure() {
             super.drawConfigure();
-            Drawf.circles(x, y, range);
+            if (!privileged) {
+                Drawf.circles(x, y, range);
+            }
             for (var l : links) {
                 Building build = world.build(l.x, l.y);
                 if (l.active && validLink(build)) {
@@ -469,19 +539,24 @@ public class GasLogicBlock extends GasBlock {
         }
 
         public boolean validLink(Building other) {
-            return other != null && other.isValid() && other.team == team && other.within(this, range + other.block.size * tilesize / 2f) && !(other instanceof ConstructBuild);
+            return other != null && other.isValid() && (privileged || (!other.block.privileged && other.team == team && other.within(this, range + other.block.size * tilesize / 2f))) && !(other instanceof ConstructBuild);
         }
 
         @Override
         public void buildConfiguration(Table table) {
-            table.button(Icon.pencil, Styles.clearTransi, () -> {
-                ui.logic.show(code, executor, code -> configure(compress(code, relativeConnections())));
+            if (!accessible()) {
+                // go away
+                deselect();
+                return;
+            }
+            table.button(Icon.pencil, Styles.cleari, () -> {
+                ui.logic.show(code, executor, privileged, code -> configure(compress(code, relativeConnections())));
             }).size(40);
         }
 
         @Override
-        public boolean onConfigureTileTapped(Building other) {
-            if (this == other) {
+        public boolean onConfigureBuildTapped(Building other) {
+            if (this == other || !accessible()) {
                 deselect();
                 return false;
             }
@@ -489,12 +564,12 @@ public class GasLogicBlock extends GasBlock {
                 configure(other.pos());
                 return false;
             }
-            return super.onConfigureTileTapped(other);
+            return super.onConfigureBuildTapped(other);
         }
 
         @Override
         public byte version() {
-            return 1;
+            return 2;
         }
 
         @Override
@@ -504,28 +579,32 @@ public class GasLogicBlock extends GasBlock {
             write.i(compressed.length);
             write.b(compressed);
             // write only the non-constant variables
-            int count = Structs.count(executor.vars, v -> !v.constant);
+            int count = Structs.count(executor.vars, v -> (!v.constant || v == executor.vars[LExecutor.varUnit]) && !(v.isobj && v.objval == null));
             write.i(count);
             for (int i = 0; i < executor.vars.length; i++) {
                 Var v = executor.vars[i];
-                if (v.constant)
+                // null is the default variable value, so waste no time serializing that
+                if (v.isobj && v.objval == null)
+                    continue;
+                // skip constants
+                if (v.constant && i != LExecutor.varUnit)
                     continue;
                 // write the name and the object value
                 write.str(v.name);
                 Object value = v.isobj ? v.objval : v.numval;
-                // do not save units.
-                if (value instanceof Unit)
-                    value = null;
                 TypeIO.writeObject(write, value);
             }
             // no memory
             write.i(0);
+            if (privileged) {
+                write.s(ipt);
+            }
         }
 
         @Override
         public void read(Reads read, byte revision) {
             super.read(read, revision);
-            if (revision == 1) {
+            if (revision >= 1) {
                 int compl = read.i();
                 byte[] bytes = new byte[compl];
                 read.b(bytes);
@@ -555,11 +634,15 @@ public class GasLogicBlock extends GasBlock {
                 // load up the variables that were stored
                 for (int i = 0; i < varcount; i++) {
                     BVar dest = asm.getVar(names[i]);
-                    if (dest != null && !dest.constant) {
-                        dest.value = values[i] instanceof BuildingBox box ? world.build(box.pos) : values[i];
+                    if (dest != null && (!dest.constant || dest.id == LExecutor.varUnit)) {
+                        dest.value = values[i] instanceof BuildingBox box ? box.unbox() : values[i] instanceof UnitBox box ? box.unbox() : values[i];
                     }
                 }
             });
+            if (privileged && revision >= 2) {
+                ipt = Math.max(read.s(), 1);
+            }
         }
     }
 }
+*/

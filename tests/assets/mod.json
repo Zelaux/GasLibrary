@@ -1,0 +1,9 @@
+{
+  "name": "test-gas-lib",
+  "displayName": "TestGasLibraryMod",
+  "dependencies": [
+    "gas-library-java"
+  ],
+  "minGameVersion": "136",
+  "main": "gas.tests.TestMod"
+}

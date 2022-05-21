@@ -1,0 +1,135 @@
+import java.time.format.DateTimeFormatter
+
+/*buildscript {
+    *//*ext {
+        arcHash = 'v135'
+        mindustryVersion = 'v135'
+        modCoreVersion = "f3028a8d038"
+    }*//*
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url 'https://jitpack.io' }
+    }
+
+    dependencies {
+        classpath "$mindustryPath:core:$mindustryVersion"
+        classpath "com.github.Anuken.Mindustry:tools:$mindustryVersionOld"
+        classpath "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+        classpath "com.github.Anuken.Arc:packer:$arcVersion"
+    }
+}*/
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+version '1.0'
+//needed for android build
+
+tasks.withType(JavaCompile) {
+    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+        options.compilerArgs.addAll(['--release', '8'])
+    }
+    sourceCompatibility = 8
+    targetCompatibility = 8
+    doFirst {
+//            options.compilerArgs = options.compilerArgs.findAll { it != '--enable-preview' }
+    }
+}
+
+tasks.withType(Javadoc) {
+    options {
+//            addStringOption('Xdoclint:none', '-quiet')
+        addStringOption('-release', '8')
+    }
+}
+apply plugin: "java-library"
+
+compileJava.options.fork = true
+
+
+afterEvaluate {
+    task mergedJavadoc(type: Javadoc) {
+
+        source rootProject.subprojects.collect { project ->
+            if (project.hasProperty("sourceSets")) {
+                return project.sourceSets.main.allJava
+            }
+        }
+
+        classpath = files(rootProject.subprojects.collect { project ->
+            if (project.hasProperty("sourceSets")) {
+                return project.sourceSets.main.compileClasspath
+            }
+        })
+        destinationDir = new File(buildDir, 'javadoc')
+    }
+}
+project.archivesBaseName="GasLibraryTestMod.jar"
+jar{
+    dependsOn(":core:jar")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = "${project.archivesBaseName}."
+    from {
+//        project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    from{
+        configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
+//        project(":core").fileTree("build/libs/core.jar").collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    from(rootDir) {
+        include "mod.hjson"
+        include "mod.json"
+        include "icon.png"
+    }
+
+    from("core/assets/") {
+        include "**"
+    }
+}
+
+task mjar(){
+//    dependsOn ":core:jar"
+    dependsOn parent.getTasks().getByName("mjar")
+    dependsOn jar
+    ext{
+        acopy = { String intoPath ->
+            delete{
+                delete "${intoPath}/${project.archivesBaseName}"
+            }
+            copy{
+                from "$buildDir/../build/libs/${project.archivesBaseName}"
+//                println "from ${new File("$buildDir/../build/libs/${project.archivesBaseName}").canonicalPath}"
+                into intoPath
+            }
+            // println "$buildDir/../tests/build/libs/${project.archivesBaseName}.jar"
+            println "Moved to ${intoPath}"
+        }
+    }
+    doLast{
+        def modsDirectories = [];
+        def file = new File(rootDir, "modsDirectories.txt");
+
+        if (file.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            reader.lines().forEach(line -> modsDirectories.add(line))
+            reader.close();
+        } else {
+            modsDirectories.add("classic");
+        }
+        for (String directory : modsDirectories) {
+            if (directory.equals("classic")) {
+                directory = getdatadir() + "mods";
+            }
+//            println "directory: "+directory
+            acopy(directory);
+        }
+        def time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
+        println "Build ended at: ${time}"
+    }
+}
+sourceSets.main.java.srcDirs = ["src/", "$buildDir/generated/sources/annotationProcessor/java/main"]
+sourceSets.main.resources.srcDirs = ["assets/"]
