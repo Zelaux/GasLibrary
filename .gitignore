@@ -161,3 +161,4 @@ gradlew.bat
 modsDirectoies.txt
 #gradle.properties
 core/build/
+compDownloader/
