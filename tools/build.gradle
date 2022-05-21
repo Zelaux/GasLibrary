@@ -259,3 +259,10 @@ task updateMindustryVersion (dependsOn: [classes, configurations.runtimeClasspat
     classpath = sourceSets.main.runtimeClasspath
     workingDir = "../"
 }
+task checkJitPack(dependsOn: [classes, configurations.runtimeClasspath], type: JavaExec){
+    maxHeapSize = "4048m"
+    args("-Xmx4048m", "--enable-preview", "v_$mindustryVersion")
+    main = "acontent.tools.VersionsFileUpdater"
+    classpath = sourceSets.main.runtimeClasspath
+    workingDir = "../"
+}
