@@ -7,6 +7,7 @@ import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.util.*;
+import gas.*;
 import gas.annotations.*;
 import gas.content.*;
 import gas.gen.*;
@@ -41,7 +42,7 @@ public class GasBlock extends Block{
         super.stats = aStats.copy(stats);
         this.gasCapacity = 10;
     }
-
+@Override
     public void getDependencies(Cons<UnlockableContent> cons){
         for(ItemStack stack : this.requirements){
             cons.get(stack.item);
@@ -221,6 +222,14 @@ public class GasBlock extends Block{
         gas::barColor,
         () -> entity.gasses.get(gas) / gasCapacity
         ));
+    }
+
+    public ConsumeGas consumeGas(Gas gas, float amount){
+        return consume(new ConsumeGas(gas, amount));
+    }
+
+    public ConsumeGasses consumeGasses(GasStack... stacks){
+        return consume(new ConsumeGasses(stacks));
     }
 
     /** Adds a liquid bar that dynamically displays a liquid type. */
