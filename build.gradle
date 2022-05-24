@@ -28,7 +28,7 @@ buildscript {
         }
         println "core: " + modCoreVersionDemo
         modCoreVersion = modCoreVersionDemo*/
-        modCoreVersion = "16127489bc0"
+        modCoreVersion = "901695bdca1"
     }
     repositories {
         mavenLocal()
@@ -323,6 +323,10 @@ project(":tools") {
         implementation 'commons-io:commons-io:2.5'
 
         implementation project(":core")
+
+        implementation arcModule("natives:natives-desktop")
+        implementation arcModule("natives:natives-freetype-desktop")
+        implementation arcModule("backends:backend-headless")
 
         implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.22.1'
         implementation "$mindustryPath:core:$mindustryVersion"

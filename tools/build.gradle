@@ -2,14 +2,13 @@ sourceSets.main.java.srcDirs = ["src/"]
 
 sourceSets.main.java.srcDirs = ["src/"]
 
-
 import arc.files.Fi
 import arc.graphics.Color
 import arc.graphics.Pixmap
 import arc.packer.TexturePacker
 import arc.struct.IntIntMap
 import arc.struct.IntMap
-//import arc.util.async.Threads
+import arc.util.Threads
 
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -177,7 +176,7 @@ task pack(dependsOn: [classes, configurations.runtimeClasspath]) {
             }
         }
 
-        arc.util.async.Threads.await(executor)
+        Threads.await(executor)
 
         println "Time taken for AA: ${(System.currentTimeMillis() - ms) / 1000f}"
         println "Copy sprites start"

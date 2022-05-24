@@ -33,6 +33,12 @@ public class GasImagePacker extends mma.tools.ModImagePacker {
     }
 
     @Override
+    protected void start() throws Exception{
+        GasVars.create();
+        super.start();
+    }
+
+    @Override
     protected void preCreatingContent() {
         super.preCreatingContent();
         GasEntityMapping.init();
