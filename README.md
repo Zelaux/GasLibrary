@@ -12,12 +12,10 @@ package example;
 
 import arc.graphics.Color;
 import gas.type.Gas;
-import mindustry.ctype.ContentList;
 
-public class YourGasses implements ContentList {
+public class YourGasses {
     public static Gas oxygen;
-    @Override
-    public void load() {
+    public static void load() {
         oxygen=new Gas("oxygen"){{
             color = Color.valueOf("bcf9ff");
             flammability = 0.7f;
@@ -30,12 +28,12 @@ public class YourGasses implements ContentList {
 ###### Adding gas to block consumes
 Add this line
 ```java
-consumes.addGas(new ConsumeGas(YourGasses.gas, amount));
+consumeGasses(GasStack.with(YourGasses.gas, amount));
 ``` 
 to your block initialization like this:
 ```java
 new GasBlock("your-block"){{
-    consumes.addGas(new ConsumeGas(YourGasses.gas, amount));
+    consumeGasses(GasStack.with(YourGasses.gas, amount));
 }};
 ```
 
@@ -97,7 +95,7 @@ Download
 Depend via Gradle:
 ```groovy
 dependencies {
-        implementation 'com.github.Zelaux.GasLibrary:core:v1.6.03'
+        implementation 'com.github.Zelaux.GasLibrary:core:v1.7'
 }
 ```
 
