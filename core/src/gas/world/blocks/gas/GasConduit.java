@@ -21,9 +21,13 @@ import mindustry.world.*;
 import mindustry.world.blocks.*;
 import mindustry.world.blocks.distribution.*;
 
-import static mindustry.Vars.tilesize;
+import static mindustry.Vars.*;
+import static mindustry.type.Liquid.animationFrames;
 
 public class GasConduit extends GasGasBlock implements Autotiler {
+
+    static final float rotatePad = 6, hpad = rotatePad / 2f / 4f;
+    static final float[][] rotateOffsets = {{hpad, hpad}, {-hpad, hpad}, {-hpad, -hpad}, {hpad, -hpad}};
 
     public final int timerFlow = timers++;
 
@@ -43,6 +47,8 @@ public class GasConduit extends GasGasBlock implements Autotiler {
     @Nullable
     public Block junctionReplacement, bridgeReplacement;
 
+    /** indices: [rotation] [fluid type] [frame] */
+    public TextureRegion[][][] rotateRegions;
     public GasConduit(String name) {
         super(name);
         rotate = true;
@@ -60,6 +66,43 @@ public class GasConduit extends GasGasBlock implements Autotiler {
             junctionReplacement = Vars.content.blocks().find(b -> b instanceof GasJunction);
         if (bridgeReplacement == null || !(bridgeReplacement instanceof ItemBridge))
             bridgeReplacement = Vars.content.blocks().find(b -> b instanceof GasBridge);
+    }
+
+    @Override
+    public void load(){
+        super.load();
+        rotateRegions = new TextureRegion[4][2][animationFrames];
+
+        if(renderer != null){
+            float pad = rotatePad;
+            var frames = renderer.getFluidFrames();
+
+            for(int rot = 0; rot < 4; rot++){
+                for(int fluid = 0; fluid < 2; fluid++){
+                    for(int frame = 0; frame < animationFrames; frame++){
+                        TextureRegion base = frames[fluid][frame];
+                        TextureRegion result = new TextureRegion();
+                        result.set(base);
+
+                        if(rot == 0){
+                            result.setX(result.getX() + pad);
+                            result.setHeight(result.height - pad);
+                        }else if(rot == 1){
+                            result.setWidth(result.width - pad);
+                            result.setHeight(result.height - pad);
+                        }else if(rot == 2){
+                            result.setWidth(result.width - pad);
+                            result.setY(result.getY() + pad);
+                        }else{
+                            result.setX(result.getX() + pad);
+                            result.setY(result.getY() + pad);
+                        }
+
+                        rotateRegions[rot][fluid][frame] = result;
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -128,16 +171,35 @@ public class GasConduit extends GasGasBlock implements Autotiler {
             }
             Draw.z(Layer.block);
             Draw.scl(xscl, yscl);
-            drawAt(x, y, blendbits, rotation, SliceMode.none);
+            drawAt(x, y, blendbits, r, SliceMode.none);
             Draw.reset();
             if (capped && capRegion.found())
                 Draw.rect(capRegion, x, y, rotdeg());
         }
 
-        protected void drawAt(float x, float y, int bits, float rotation, SliceMode slice) {
+        protected void drawAt(float x, float y, int bits, int rotation, SliceMode slice) {
             Draw.color(botColor);
             Draw.rect(sliced(botRegions[bits], slice), x, y, rotation);
-            Drawf.liquid(sliced(botRegions[bits], slice), x, y, smoothGas, gasses.current().color, rotation);
+
+            int offset = yscl == -1 ? 3 : 0;
+
+            int frame = gasses.current().getAnimationFrame();
+            int gas = /*gasses.current().gas*/true ? 1 : 0;
+            float ox = 0f, oy = 0f;
+            int wrapRot = (rotation + offset) % 4;
+            TextureRegion gasr = bits == 1 ? rotateRegions[wrapRot][gas][frame] : renderer.fluidFrames[gas][frame];
+
+            if(bits == 1){
+                ox = rotateOffsets[wrapRot][0];
+                oy = rotateOffsets[wrapRot][1];
+            }
+
+            //the drawing state machine sure was a great design choice with no downsides or hidden behavior!!!
+            float xscl = Draw.xscl, yscl = Draw.yscl;
+            Draw.scl(1f, 1f);
+            Drawf.liquid(sliced(gasr, slice), x + ox, y + oy, smoothGas, gasses.current().color.write(Tmp.c1).a(1f));
+            Draw.scl(xscl, yscl);
+//            Drawf.liquid(sliced(botRegions[bits], slice), x, y, smoothGas, gasses.current().color, rotation);
             Draw.rect(sliced(topRegions[bits], slice), x, y, rotation);
         }
 

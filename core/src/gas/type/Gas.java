@@ -155,6 +155,10 @@ public class Gas extends UnlockableContent{
 
         uiIcon = Core.atlas.find("gas-" + name + "-ui", uiIcon);
     }
+    public float animationScale=Liquid.animationScaleGas;
+    public int getAnimationFrame(){
+        return (int)(Time.time / animationScale * Liquid.animationFrames + id*5) % Liquid.animationFrames;
+    }
 
     public Color barColor(){
         return this.barColor == null ? this.color : this.barColor;
