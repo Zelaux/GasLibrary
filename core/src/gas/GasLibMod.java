@@ -1,15 +1,18 @@
 package gas;
 
+import arc.func.*;
+import arc.struct.*;
 import arc.util.*;
 import arc.util.serialization.*;
 import arc.util.serialization.Json.*;
 import gas.annotations.GasAnnotations.*;
+import gas.content.*;
 import gas.gen.*;
 import gas.type.*;
 import gas.world.consumers.*;
 import mindustry.*;
+import mindustry.ctype.*;
 import mindustry.mod.*;
-import mindustry.world.consumers.*;
 import mma.*;
 import mma.annotations.ModAnnotations.*;
 
@@ -28,6 +31,8 @@ public class GasLibMod extends MMAMod{
 
         ContentParser contentParser = Reflect.get(Mods.class, Vars.mods, "parser");
         Json parser = Reflect.get(ContentParser.class, contentParser, "parser");
+        Reflect.<ObjectMap<ContentType, ?>>get(ContentParser.class, contentParser, "parsers")
+        .put(Gasses.gasType(), Reflect.invoke(ContentParser.class,contentParser,"parser",new Object[]{Gasses.gasType(),(Func<String,Content>)Gas::new},ContentType.class,Func.class));
         parser.setSerializer(GasStack.class, new Serializer<>(){
             @Override
             public void write(Json json, GasStack object, Class knownType){

@@ -23,7 +23,6 @@ import static mindustry.Vars.*;
 public class GasBuilding extends Building{
     public GasModule gasses;
     public GasBlock block;
-    public float smoothGas;
 
     protected GasBuilding(){
         block = (GasBlock)super.block;

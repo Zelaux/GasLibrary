@@ -11,7 +11,6 @@ public class GasJunction extends GasGasBlock{
 
     public GasJunction(String name){
         super(name);
-        int i;
     }
 
     @Override
@@ -41,8 +40,8 @@ public class GasJunction extends GasGasBlock{
 
         @Override
         public GasBuilding getGasDestination(Building source, Gas gas){
-            if(!enabled)
-                return this;
+            if(!enabled) return this;
+
             int dir = source.relativeTo(tile.x, tile.y);
             dir = (dir + 4) % 4;
             GasBuilding next = nearby(dir) instanceof GasBuilding b ? b : null;

@@ -16,7 +16,6 @@ import mindustry.annotations.Annotations.*;
 import mindustry.entities.units.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
-import mindustry.input.*;
 import mindustry.world.*;
 import mindustry.world.blocks.*;
 import mindustry.world.blocks.distribution.*;
@@ -150,31 +149,34 @@ public class GasConduit extends GasGasBlock implements Autotiler {
         return new TextureRegion[] { Core.atlas.find("conduit-bottom"), topRegions[0] };
     }
 
-    public class GasConduitBuild extends GasGasBlock.GasBuild implements ChainedBuilding {
+    public class GasConduitBuild extends GasGasBuild implements ChainedBuilding {
 
+        public float smoothGas;
         public int blendbits, xscl, yscl, blending;
 
-        public boolean capped;
+        public boolean capped, backCapped = false;
 
         @Override
         public void draw() {
-            float rotation = rotdeg();
             int r = this.rotation;
-            // draw extra conduits facing this one for tiling purposes
+
+            //draw extra conduits facing this one for tiling purposes
             Draw.z(Layer.blockUnder);
-            for (int i = 0; i < 4; i++) {
-                if ((blending & (1 << i)) != 0) {
+            for(int i = 0; i < 4; i++){
+                if((blending & (1 << i)) != 0){
                     int dir = r - i;
-                    float rot = i == 0 ? rotation : (dir) * 90;
-                    drawAt(x + Geometry.d4x(dir) * tilesize * 0.75f, y + Geometry.d4y(dir) * tilesize * 0.75f, 0, rot, i != 0 ? SliceMode.bottom : SliceMode.top);
+                    drawAt(x + Geometry.d4x(dir) * tilesize*0.75f, y + Geometry.d4y(dir) * tilesize*0.75f, 0, i == 0 ? r : dir, i != 0 ? SliceMode.bottom : SliceMode.top);
                 }
             }
+
             Draw.z(Layer.block);
+
             Draw.scl(xscl, yscl);
             drawAt(x, y, blendbits, r, SliceMode.none);
             Draw.reset();
-            if (capped && capRegion.found())
-                Draw.rect(capRegion, x, y, rotdeg());
+
+            if(capped && capRegion.found()) Draw.rect(capRegion, x, y, rotdeg());
+            if(backCapped && capRegion.found()) Draw.rect(capRegion, x, y, rotdeg() + 180);
         }
 
         protected void drawAt(float x, float y, int bits, int rotation, SliceMode slice) {
@@ -206,19 +208,22 @@ public class GasConduit extends GasGasBlock implements Autotiler {
         @Override
         public void onProximityUpdate() {
             super.onProximityUpdate();
-            var bits = buildBlending(tile, rotation, null, true);
+            int[] bits = buildBlending(tile, rotation, null, true);
             blendbits = bits[0];
             xscl = bits[1];
             yscl = bits[2];
             blending = bits[4];
-            Building next = front();
-            capped = next == null || next.team != team || !(next.block instanceof GasBlock gasBuild && gasBuild.hasGasses);
+
+            Building next = front(), prev = back();
+            capped = next == null || next.team != team || !next.block.hasLiquids;
+            backCapped = blendbits == 0 && (prev == null || prev.team != team || !prev.block.hasLiquids);
         }
 
         @Override
         public boolean acceptGas(Building source, Gas gas) {
             noSleep();
-            return (gasses.current() == gas || gasses.currentAmount() < 0.2f) && (tile == null||source==null || (source.relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
+            return (gasses.current() == gas || gasses.currentAmount() < 0.2f)
+            && (tile == null||source==null || (source.relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
         }
 
         @Override

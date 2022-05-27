@@ -8,6 +8,7 @@ import arc.struct.*;
 import arc.util.*;
 import arc.util.io.*;
 import gas.gen.*;
+import gas.type.*;
 import gas.world.*;
 import mindustry.annotations.Annotations.*;
 import mindustry.core.*;
@@ -17,6 +18,7 @@ import mindustry.graphics.*;
 import mindustry.input.*;
 import mindustry.type.*;
 import mindustry.world.*;
+import mindustry.world.blocks.distribution.ItemBridge.*;
 import mindustry.world.meta.*;
 
 import static mindustry.Vars.*;
@@ -169,60 +171,67 @@ public class GasItemBridge extends GasBlock {
     }
 
     public class GasItemBridgeBuild extends GasBuilding {
-
         public int link = -1;
-
         public IntSeq incoming = new IntSeq(false, 4);
-
         public float warmup;
-
         public float time = -8f, timeSpeed;
-
         public boolean wasMoved, moved;
-
         public float transportCounter;
 
         @Override
-        public void playerPlaced(Object config) {
+        public void pickedUp(){
+            link = -1;
+        }
+
+        @Override
+        public void playerPlaced(Object config){
             super.playerPlaced(config);
-            var link = findLink(tile.x, tile.y);
-            if (linkValid(tile, link) && this.link != link.pos() && !proximity.contains(link.build)) {
+
+            Tile link = findLink(tile.x, tile.y);
+            if(linkValid(tile, link) && this.link != link.pos() && !proximity.contains(link.build)){
                 link.build.configure(tile.pos());
             }
+
             lastBuild = this;
         }
 
         @Override
-        public void drawSelect() {
-            if (linkValid(tile, world.tile(link))) {
+        public void drawSelect(){
+            if(linkValid(tile, world.tile(link))){
                 drawInput(world.tile(link));
             }
+
             incoming.each(pos -> drawInput(world.tile(pos)));
+
             Draw.reset();
         }
 
-        private void drawInput(Tile other) {
-            if (!linkValid(tile, other, false))
-                return;
+        private void drawInput(Tile other){
+            if(!linkValid(tile, other, false)) return;
             boolean linked = other.pos() == link;
+
             Tmp.v2.trns(tile.angleTo(other), 2f);
             float tx = tile.drawx(), ty = tile.drawy();
             float ox = other.drawx(), oy = other.drawy();
-            float alpha = Math.abs((linked ? 100 : 0) - (Time.time * 2f) % 100f) / 100f;
+            float alpha = Math.abs((linked ? 100 : 0)-(Time.time * 2f) % 100f) / 100f;
             float x = Mathf.lerp(ox, tx, alpha);
             float y = Mathf.lerp(oy, ty, alpha);
+
             Tile otherLink = linked ? other : tile;
             int rel = (linked ? tile : other).absoluteRelativeTo(otherLink.x, otherLink.y);
-            // draw "background"
+
+            //draw "background"
             Draw.color(Pal.gray);
             Lines.stroke(2.5f);
             Lines.square(ox, oy, 2f, 45f);
             Lines.stroke(2.5f);
             Lines.line(tx + Tmp.v2.x, ty + Tmp.v2.y, ox - Tmp.v2.x, oy - Tmp.v2.y);
-            // draw foreground colors
+
+            //draw foreground colors
             Draw.color(linked ? Pal.place : Pal.accent);
             Lines.stroke(1f);
             Lines.line(tx + Tmp.v2.x, ty + Tmp.v2.y, ox - Tmp.v2.x, oy - Tmp.v2.y);
+
             Lines.square(ox, oy, 2f, 45f);
             Draw.mixcol(Draw.getColor(), 1f);
             Draw.color();
@@ -231,31 +240,35 @@ public class GasItemBridge extends GasBlock {
         }
 
         @Override
-        public void drawConfigure() {
+        public void drawConfigure(){
             Drawf.select(x, y, tile.block().size * tilesize / 2f + 2f, Pal.accent);
-            for (int i = 1; i <= range; i++) {
-                for (int j = 0; j < 4; j++) {
-                    var other = tile.nearby(Geometry.d4[j].x * i, Geometry.d4[j].y * i);
-                    if (linkValid(tile, other)) {
+
+            for(int i = 1; i <= range; i++){
+                for(int j = 0; j < 4; j++){
+                    Tile other = tile.nearby(Geometry.d4[j].x * i, Geometry.d4[j].y * i);
+                    if(linkValid(tile, other)){
                         boolean linked = other.pos() == link;
-                        Drawf.select(other.drawx(), other.drawy(), other.block().size * tilesize / 2f + 2f + (linked ? 0f : Mathf.absin(Time.time, 4f, 1f)), linked ? Pal.place : Pal.breakInvalid);
+
+                        Drawf.select(other.drawx(), other.drawy(),
+                        other.block().size * tilesize / 2f + 2f + (linked ? 0f : Mathf.absin(Time.time, 4f, 1f)), linked ? Pal.place : Pal.breakInvalid);
                     }
                 }
             }
         }
 
         @Override
-        public boolean onConfigureBuildTapped(Building other) {
-            // reverse connection
-            if (other instanceof GasItemBridgeBuild b && b.link == pos()) {
+        public boolean onConfigureBuildTapped(Building other){
+            //reverse connection
+            if(other instanceof ItemBridgeBuild b && b.link == pos()){
                 configure(other.pos());
                 other.configure(-1);
                 return true;
             }
-            if (linkValid(tile, other.tile)) {
-                if (link == other.pos()) {
+
+            if(linkValid(tile, other.tile)){
+                if(link == other.pos()){
                     configure(-1);
-                } else {
+                }else{
                     configure(other.pos());
                 }
                 return false;
@@ -263,57 +276,62 @@ public class GasItemBridge extends GasBlock {
             return true;
         }
 
-        public void checkIncoming() {
+        public void checkIncoming(){
             int idx = 0;
-            while (idx < incoming.size) {
+            while(idx < incoming.size){
                 int i = incoming.items[idx];
-                var other = world.tile(i);
-                if (!linkValid(tile, other, false) || ((GasItemBridgeBuild) other.build).link != tile.pos()) {
+                Tile other = world.tile(i);
+                if(!linkValid(tile, other, false) || ((ItemBridgeBuild)other.build).link != tile.pos()){
                     incoming.removeIndex(idx);
-                    idx--;
+                    idx --;
                 }
-                idx++;
+                idx ++;
             }
         }
 
         @Override
-        public void updateTile() {
-            if (timer(timerCheckMoved, 30f)) {
+        public void updateTile(){
+            if(timer(timerCheckMoved, 30f)){
                 wasMoved = moved;
                 moved = false;
             }
-            // smooth out animation, so it doesn't stop/start immediately
+
+            //smooth out animation, so it doesn't stop/start immediately
             timeSpeed = Mathf.approachDelta(timeSpeed, wasMoved ? 1f : 0f, 1f / 60f);
+
             time += timeSpeed * delta();
+
             checkIncoming();
-            var other = world.tile(link);
-            if (!linkValid(tile, other)) {
+
+            Tile other = world.tile(link);
+            if(!linkValid(tile, other)){
                 doDump();
                 warmup = 0f;
-            } else {
-                var inc = ((GasItemBridgeBuild) other.build).incoming;
+            }else{
+                var inc = ((ItemBridgeBuild)other.build).incoming;
                 int pos = tile.pos();
-                if (!inc.contains(pos)) {
+                if(!inc.contains(pos)){
                     inc.add(pos);
                 }
-                warmup = Mathf.approachDelta(warmup, efficiency(), 1f / 30f);
+
+                warmup = Mathf.approachDelta(warmup, efficiency, 1f / 30f);
                 updateTransport(other.build);
             }
         }
 
-        public void doDump() {
-            // allow dumping multiple times per frame
+        public void doDump(){
+            //allow dumping multiple times per frame
             dumpAccumulate();
         }
 
-        public void updateTransport(Building other) {
+        public void updateTransport(Building other){
             transportCounter += edelta();
-            while (transportCounter >= transportTime) {
-                var item = items.take();
-                if (item != null && other.acceptItem(this, item)) {
+            while(transportCounter >= transportTime){
+                Item item = items.take();
+                if(item != null && other.acceptItem(this, item)){
                     other.handleItem(this, item);
                     moved = true;
-                } else if (item != null) {
+                }else if(item != null){
                     items.add(item, 1);
                     items.undoFlow(item);
                 }
@@ -322,125 +340,170 @@ public class GasItemBridge extends GasBlock {
         }
 
         @Override
-        public void draw() {
+        public void draw(){
             super.draw();
+
             Draw.z(Layer.power);
-            var other = world.tile(link);
-            if (!linkValid(tile, other))
-                return;
-            if (Mathf.zero(Renderer.bridgeOpacity))
-                return;
+
+            Tile other = world.tile(link);
+            if(!linkValid(tile, other)) return;
+
+            if(Mathf.zero(Renderer.bridgeOpacity)) return;
+
             int i = relativeTo(other.x, other.y);
-            if (pulse) {
+
+            if(pulse){
                 Draw.color(Color.white, Color.black, Mathf.absin(Time.time, 6f, 0.07f));
             }
+
             float warmup = hasPower ? this.warmup : 1f;
+
             Draw.alpha((fadeIn ? Math.max(warmup, 0.25f) : 1f) * Renderer.bridgeOpacity);
+
             Draw.rect(endRegion, x, y, i * 90 + 90);
             Draw.rect(endRegion, other.drawx(), other.drawy(), i * 90 + 270);
+
             Lines.stroke(8f);
-            Tmp.v1.set(x, y).sub(other.worldx(), other.worldy()).setLength(tilesize / 2f).scl(-1f);
-            Lines.line(bridgeRegion, x + Tmp.v1.x, y + Tmp.v1.y, other.worldx() - Tmp.v1.x, other.worldy() - Tmp.v1.y, false);
+
+            Tmp.v1.set(x, y).sub(other.worldx(), other.worldy()).setLength(tilesize/2f).scl(-1f);
+
+            Lines.line(bridgeRegion,
+            x + Tmp.v1.x,
+            y + Tmp.v1.y,
+            other.worldx() - Tmp.v1.x,
+            other.worldy() - Tmp.v1.y, false);
+
             int dist = Math.max(Math.abs(other.x - tile.x), Math.abs(other.y - tile.y)) - 1;
+
             Draw.color();
-            int arrows = (int) (dist * tilesize / arrowSpacing), dx = Geometry.d4x(i), dy = Geometry.d4y(i);
-            for (int a = 0; a < arrows; a++) {
+
+            int arrows = (int)(dist * tilesize / arrowSpacing), dx = Geometry.d4x(i), dy = Geometry.d4y(i);
+
+            for(int a = 0; a < arrows; a++){
                 Draw.alpha(Mathf.absin(a - time / arrowTimeScl, arrowPeriod, 1f) * warmup * Renderer.bridgeOpacity);
-                Draw.rect(arrowRegion, x + dx * (tilesize / 2f + a * arrowSpacing + arrowOffset), y + dy * (tilesize / 2f + a * arrowSpacing + arrowOffset), i * 90f);
+                Draw.rect(arrowRegion,
+                x + dx * (tilesize / 2f + a * arrowSpacing + arrowOffset),
+                y + dy * (tilesize / 2f + a * arrowSpacing + arrowOffset),
+                i * 90f);
             }
+
             Draw.reset();
         }
 
         @Override
-        public boolean acceptItem(Building source, Item item) {
+        public boolean acceptItem(Building source, Item item){
             return hasItems && team == source.team && items.total() < itemCapacity && checkAccept(source, world.tile(link));
         }
 
         @Override
-        public boolean canDumpLiquid(Building to, Liquid liquid) {
+        public boolean canDumpLiquid(Building to, Liquid liquid){
             return checkDump(to);
         }
 
         @Override
-        public boolean acceptLiquid(Building source, Liquid liquid) {
-            return hasLiquids && team == source.team && (liquids.current() == liquid || liquids.get(liquids.current()) < 0.2f) && checkAccept(source, world.tile(link));
+        public boolean acceptLiquid(Building source, Liquid liquid){
+            return
+            hasLiquids && team == source.team &&
+            (liquids.current() == liquid || liquids.get(liquids.current()) < 0.2f) &&
+            checkAccept(source, world.tile(link));
         }
 
-        protected boolean checkAccept(Building source, Tile other) {
-            if (tile == null || linked(source))
-                return true;
-            if (linkValid(tile, other)) {
+        @Override
+        public boolean canDumpGas(Building to, Gas gas){
+            return checkDump(to);
+        }
+
+        @Override
+        public boolean acceptGas(Building source, Gas gas){
+            return
+            hasGasses && team == source.team &&
+            (gasses.current() == gas || gasses.get(gasses.current()) < 0.2f) &&
+            checkAccept(source, world.tile(link));
+        }
+
+        protected boolean checkAccept(Building source, Tile other){
+            if(tile == null || linked(source)) return true;
+
+            if(linkValid(tile, other)){
                 int rel = relativeTo(other);
                 int rel2 = relativeTo(Edges.getFacingEdge(source, this));
+
                 return rel != rel2;
             }
+
             return false;
         }
 
-        protected boolean linked(Building source) {
-            return source instanceof GasItemBridgeBuild && linkValid(source.tile, tile) && ((GasItemBridgeBuild) source).link == pos();
+        protected boolean linked(Building source){
+            return source instanceof ItemBridgeBuild && linkValid(source.tile, tile) && ((ItemBridgeBuild)source).link == pos();
         }
 
         @Override
-        public boolean canDump(Building to, Item item) {
+        public boolean canDump(Building to, Item item){
             return checkDump(to);
         }
 
-        protected boolean checkDump(Building to) {
-            var other = world.tile(link);
-            if (!linkValid(tile, other)) {
-                var edge = Edges.getFacingEdge(to.tile, tile);
+        protected boolean checkDump(Building to){
+            Tile other = world.tile(link);
+            if(!linkValid(tile, other)){
+                Tile edge = Edges.getFacingEdge(to.tile, tile);
                 int i = relativeTo(edge.x, edge.y);
-                for (int j = 0; j < incoming.size; j++) {
+
+                for(int j = 0; j < incoming.size; j++){
                     int v = incoming.items[j];
-                    if (relativeTo(Point2.x(v), Point2.y(v)) == i) {
+                    if(relativeTo(Point2.x(v), Point2.y(v)) == i){
                         return false;
                     }
                 }
                 return true;
             }
+
             int rel = relativeTo(other.x, other.y);
             int rel2 = relativeTo(to.tileX(), to.tileY());
+
             return rel != rel2;
         }
 
         @Override
-        public boolean shouldConsume() {
+        public boolean shouldConsume(){
             return linkValid(tile, world.tile(link)) && enabled;
         }
 
         @Override
-        public Point2 config() {
+        public Point2 config(){
             return Point2.unpack(link).sub(tile.x, tile.y);
         }
 
         @Override
-        public byte version() {
+        public byte version(){
             return 1;
         }
 
         @Override
-        public void write(Writes write) {
+        public void write(Writes write){
             super.write(write);
             write.i(link);
             write.f(warmup);
             write.b(incoming.size);
-            for (int i = 0; i < incoming.size; i++) {
+
+            for(int i = 0; i < incoming.size; i++){
                 write.i(incoming.items[i]);
             }
+
             write.bool(wasMoved || moved);
         }
 
         @Override
-        public void read(Reads read, byte revision) {
+        public void read(Reads read, byte revision){
             super.read(read, revision);
             link = read.i();
             warmup = read.f();
             byte links = read.b();
-            for (int i = 0; i < links; i++) {
+            for(int i = 0; i < links; i++){
                 incoming.add(read.i());
             }
-            if (revision >= 1) {
+
+            if(revision >= 1){
                 wasMoved = moved = read.bool();
             }
         }

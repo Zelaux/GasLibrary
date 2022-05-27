@@ -23,18 +23,14 @@ public class GasBridge extends GasItemBridge {
     public class GasBridgeBuild extends GasItemBridgeBuild {
 
         @Override
-        public boolean acceptGas(Building source, Gas gas) {
-            return hasGasses && team == source.team && (gasses.current() == gas || gasses.get(gasses.current()) < 0.2f) && checkAccept(source, world.tile(link));
-        }
-        @Override
-        public void updateTransport(Building other) {
-            if (warmup >= 0.25f) {
+        public void updateTransport(Building other){
+            if(warmup >= 0.25f){
                 moved |= moveGas(other, gasses.current()) > 0.05f;
             }
         }
 
         @Override
-        public void doDump() {
+        public void doDump(){
             dumpGas(gasses.current(), 1f);
         }
     }
