@@ -22,7 +22,7 @@ import static mindustry.Vars.world;
 
 @ModAnnotations.EntityDef(value = {Cloudc.class}, pooled = true)
 @ModAnnotations.Component(base = true)
-public abstract class CloudComp implements Posc, Cloudc, Drawc{
+abstract class CloudComp implements Posc, Cloudc, Drawc{
     private static final Rect rect = new Rect(), rect2 = new Rect();
     private static int seeds;
     private static boolean hasWall;

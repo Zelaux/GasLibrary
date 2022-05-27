@@ -26,7 +26,7 @@ public class Gas extends UnlockableContent{
     public float radioactivity;
     public Color barColor;
     public float temperature;
-    public StatusEffect effect;
+    public StatusEffect effect=StatusEffects.none;
     public Color lightColor = color = Color.black;
     public float viscosity = 0.1f;
     public float transparency = 1f;
@@ -45,6 +45,7 @@ public class Gas extends UnlockableContent{
             }
         }
         this.color = new Color(color);
+        barColor=color;
     }
 
     public Gas(String name){

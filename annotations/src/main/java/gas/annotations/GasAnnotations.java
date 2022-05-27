@@ -14,5 +14,9 @@ public class GasAnnotations {
         String analogue() default "\n";
         String description() default "\n";
     }
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface GasClassMapGenerator {
+    }
 
 }
