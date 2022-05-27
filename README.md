@@ -28,12 +28,12 @@ public class YourGasses {
 ###### Adding gas to block consumes
 Add this line
 ```java
-consumeGasses(new GasStack(YourGasses.gas, amount));
+consumeGasses(GasStack.with(YourGasses.gas, amount));
 ``` 
 to your block initialization like this:
 ```java
 new GasBlock("your-block"){{
-    consumeGasses(new GasStack(YourGasses.gas, amount));
+    consumeGasses(GasStack.with(YourGasses.gas, amount));
 }};
 ```
 
