@@ -95,7 +95,7 @@ Download
 Depend via Gradle:
 ```groovy
 dependencies {
-        implementation 'com.github.Zelaux.GasLibrary:core:v1.7'
+        implementation 'com.github.Zelaux.GasLibrary:core:v1.7.0'
 }
 ```
 
