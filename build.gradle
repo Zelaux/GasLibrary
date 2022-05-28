@@ -425,6 +425,9 @@ task resolveDependencies {
         }
     }
 }
+publishToMavenLocal{
+    dependsOn("jar")
+}
 task mjar(){
     dependsOn "jar"
     doFirst {
