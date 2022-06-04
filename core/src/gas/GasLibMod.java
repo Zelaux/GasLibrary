@@ -18,8 +18,6 @@ import mma.annotations.ModAnnotations.*;
 
 import static gas.GasVars.loaded;
 
-@MainClass()
-@GasClassMapGenerator()
 public class GasLibMod extends MMAMod{
 
 

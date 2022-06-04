@@ -27,7 +27,7 @@ buildscript{
         }
         println "core: " + modCoreVersionDemo
         modCoreVersion = modCoreVersionDemo*/
-        modCoreVersion = "901695bdca1"
+        modCoreVersion = "72b85a0ea32"
 
         kotlinVersion = "1.6.0"
         jabelVersion = "0.7.0"
@@ -231,6 +231,7 @@ project(":core"){
     jar{
         exclude("gas/entities/comp/**")
         exclude("gas/entities/compByAnuke/**")
+        exclude("gas/mma/**")
     }
 }
 
